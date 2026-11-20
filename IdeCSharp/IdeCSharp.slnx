@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="IdeCSharp.Core/IdeCSharp.Core.csproj" />
+  <Project Path="IdeCSharp.Tests/IdeCSharp.Tests.csproj" />
+  <Project Path="IdeCSharp.UI/IdeCSharp.UI.csproj" />
+</Solution>
