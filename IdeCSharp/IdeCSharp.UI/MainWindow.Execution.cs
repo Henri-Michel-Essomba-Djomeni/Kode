@@ -15,7 +15,7 @@ partial class MainWindow
         _outputPanel = new OutputPanel();
         _outputPanel.Bind(_executionService);
 
-        BottomHost.Content = _outputPanel;       // le panneau remplace le texte provisoire
+        _bottomTabs.OutputHost.Content = _outputPanel;   // le panneau va dans l'onglet SORTIE
         Router.Execution = _executionService;    // le routeur peut maintenant lancer et arrêter
 
         // TEST TEMPORAIRE : décommente la ligne suivante pour vérifier sans attendre les autres modules.
