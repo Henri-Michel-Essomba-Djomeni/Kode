@@ -51,17 +51,30 @@ public class FileService : IFileService
         long totalBytes = stream.Length;
         var builder = new StringBuilder();
         var buffer = new char[ChunkSize];
+        int lastPercent = -1; // dernier pourcentage signalé
 
         int read;
-        while ((read = await reader.ReadAsync(buffer.AsMemory(), cancellationToken)) > 0)
+        // ConfigureAwait(false) : après chaque bloc, on ne force PAS le retour sur le thread
+        // de l'interface. La lecture se déroule entièrement en arrière-plan.
+        while ((read = await reader.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false)) > 0)
         {
             builder.Append(buffer, 0, read);
 
             if (progress != null && totalBytes > 0)
-                progress.Report(Math.Min(1.0, (double)stream.Position / totalBytes));
+            {
+                // On ne signale que lorsque le pourcentage change (100 rapports au maximum),
+                // pour ne pas saturer le thread de l'interface avec des milliers de messages.
+                int percent = (int)(Math.Min(1.0, (double)stream.Position / totalBytes) * 100);
+                if (percent > lastPercent)
+                {
+                    lastPercent = percent;
+                    progress.Report(percent / 100.0);
+                }
+            }
         }
 
-        progress?.Report(1.0);
+        if (lastPercent < 100)
+            progress?.Report(1.0); // la lecture se termine toujours sur 100 %
         return builder.ToString();
     }
 
@@ -73,7 +86,8 @@ public class FileService : IFileService
         if (!string.IsNullOrEmpty(folder))
             Directory.CreateDirectory(folder); // ne fait rien si le dossier existe déjà
 
-        await File.WriteAllTextAsync(path, content, new UTF8Encoding(false), cancellationToken);
+        await File.WriteAllTextAsync(path, content, new UTF8Encoding(false), cancellationToken)
+            .ConfigureAwait(false);
     }
 
     // ------------------------------------------------------------------

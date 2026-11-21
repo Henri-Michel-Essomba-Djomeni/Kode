@@ -116,6 +116,19 @@ public class FileServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Read_limite_les_rapports_de_progression_a_un_par_pourcent()
+    {
+        // 20 Mo = environ 320 blocs de 64 Ko : sans limite, il y aurait ~320 rapports.
+        await File.WriteAllTextAsync(P("enorme.txt"), new string('c', 20_000_000));
+        var progress = new SyncProgress();
+
+        await _service.ReadFileAsync(P("enorme.txt"), progress);
+
+        Assert.True(progress.Values.Count <= 101, $"Trop de rapports : {progress.Values.Count}");
+        Assert.Equal(1.0, progress.Values[^1]);
+    }
+
+    [Fact]
     public async Task Read_est_annulable()
     {
         await File.WriteAllTextAsync(P("gros2.txt"), new string('b', 1_000_000));
