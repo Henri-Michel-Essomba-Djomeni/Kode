@@ -19,6 +19,11 @@ namespace IdeCSharp.UI.Editor;
 /// </summary>
 public partial class DocumentView : UserControl
 {
+    private static readonly HashSet<string> SupportedLanguages = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "C#", "XML", "HTML", "Python", "JSON"
+    };
+
     // Drapeau empêchant de passer en « modifié » pendant un LoadText.
     private bool _chargementEnCours;
     private bool _isModified;
@@ -29,6 +34,9 @@ public partial class DocumentView : UserControl
     public DocumentView()
     {
         InitializeComponent();
+
+        // Enregistrement des langages supplémentaires (Python, JSON)
+        ExtraLanguages.Register();
 
         // Stratégie d'indentation par défaut
         CodeEditor.TextArea.IndentationStrategy = new DefaultIndentationStrategy();
@@ -82,20 +90,29 @@ public partial class DocumentView : UserControl
     // ----------------------------------------------------------------
 
     /// <summary>
-    /// Nom de la définition de coloration syntaxique active, ou « Texte brut ».
+    /// Nom de la définition de coloration syntaxique active ("C#", "XML", "HTML", "Python", "JSON"), ou « Texte brut ».
     /// </summary>
     public string LanguageName => CodeEditor.SyntaxHighlighting?.Name ?? "Texte brut";
 
     /// <summary>
     /// Définit la coloration syntaxique et la stratégie d'indentation selon l'extension du fichier.
+    /// Seuls les langages supportés (C#, XML, HTML, Python, JSON) sont activés, le reste étant traité en texte brut.
     /// </summary>
     public void SetLanguageFromPath(string path)
     {
-        string extension = Path.GetExtension(path);
+        string extension = Path.GetExtension(path).ToLowerInvariant();
         var definition = HighlightingManager.Instance.GetDefinitionByExtension(extension);
-        CodeEditor.SyntaxHighlighting = definition;
 
-        if (definition != null && string.Equals(definition.Name, "C#", StringComparison.OrdinalIgnoreCase))
+        if (definition != null && SupportedLanguages.Contains(definition.Name))
+        {
+            CodeEditor.SyntaxHighlighting = definition;
+        }
+        else
+        {
+            CodeEditor.SyntaxHighlighting = null;
+        }
+
+        if (CodeEditor.SyntaxHighlighting != null && string.Equals(CodeEditor.SyntaxHighlighting.Name, "C#", StringComparison.OrdinalIgnoreCase))
         {
             CodeEditor.TextArea.IndentationStrategy = new CSharpIndentationStrategy(CodeEditor.Options);
         }
