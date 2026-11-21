@@ -13,4 +13,8 @@
     <ProjectReference Include="..\IdeCSharp.Tests\IdeCSharp.Tests.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+  </ItemGroup>
+
 </Project>
