@@ -1,0 +1,34 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Le dégradé bleu vers violet du fond -->
+    <LinearGradientBrush x:Key="KodeIconBackground" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#2F6FED" Offset="0"/>
+        <GradientStop Color="#7A3FF2" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- L'icône complète : utilisable comme Source d'une Image ou comme Icon de fenêtre -->
+    <DrawingImage x:Key="KodeIconImage">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <!-- Carré arrondi -->
+                <GeometryDrawing Brush="{StaticResource KodeIconBackground}">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="0,0,64,64" RadiusX="14" RadiusY="14"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Symbole </> : trois segments dans un seul tracé -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="White" Thickness="5"
+                             StartLineCap="Round" EndLineCap="Round" LineJoin="Round"/>
+                    </GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M26,20 L14,32 L26,44 M38,20 L50,32 L38,44 M35,16 L29,48"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+</ResourceDictionary>
