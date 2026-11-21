@@ -36,6 +36,7 @@ namespace IdeCSharp.UI
 
             // On ferme proprement la console quand la fenêtre se ferme
             Closed += (_, _) => _terminal.Dispose();
+            InitExecutionModule();
         }
 
         // ------------------------------------------------------------------
