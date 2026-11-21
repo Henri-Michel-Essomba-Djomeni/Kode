@@ -1,0 +1,38 @@
+<Window x:Class="IdeCSharp.UI.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="À propos de Kode"
+        Width="420" SizeToContent="Height"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Icon="{StaticResource KodeIconImage}"
+        Background="{DynamicResource PanelBackgroundBrush}">
+
+    <StackPanel Margin="24">
+        <Image Source="{StaticResource KodeIconImage}" Width="72" Height="72"
+               HorizontalAlignment="Center"/>
+
+        <TextBlock Text="Kode" FontSize="26" FontWeight="SemiBold"
+                   HorizontalAlignment="Center" Margin="0,12,0,0"
+                   Foreground="{DynamicResource PanelForegroundBrush}"/>
+
+        <TextBlock x:Name="VersionText" HorizontalAlignment="Center"
+                   Foreground="{DynamicResource MutedForegroundBrush}"/>
+
+        <TextBlock Text="Un IDE simple, fluide et intuitif, écrit en C# avec WPF. Projet académique KEYCE."
+                   TextWrapping="Wrap" TextAlignment="Center" Margin="0,16,0,0"
+                   Foreground="{DynamicResource PanelForegroundBrush}"/>
+
+        <TextBlock Text="Équipe" FontWeight="SemiBold" Margin="0,20,0,4"
+                   Foreground="{DynamicResource PanelForegroundBrush}"/>
+        <!-- Remplace « Chef de groupe » par son prénom -->
+        <TextBlock Text="Chef de groupe · Essomba · Valdez · Raïssa · Kammadeu"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource MutedForegroundBrush}"/>
+
+        <Button Content="Fermer" MinWidth="80" Margin="0,24,0,0"
+                HorizontalAlignment="Right" IsDefault="True" IsCancel="True"
+                Click="OnCloseClick"/>
+    </StackPanel>
+</Window>
