@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Threading;
 
 namespace IdeCSharp.UI.Editor;
@@ -16,6 +17,8 @@ public partial class EditorView : UserControl
     // Maintient les abonnements pour pouvoir s'en détacher proprement à la fermeture de l'onglet
     private readonly Dictionary<TabItem, EventHandler> _modifiedHandlers = new();
 
+    private MainWindow? _parentMainWindow;
+
     /// <summary>
     /// Service gérant les opérations sur les documents (implémente IEditorService).
     /// </summary>
@@ -28,6 +31,70 @@ public partial class EditorView : UserControl
     {
         InitializeComponent();
         Service = new EditorService(this);
+
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+    }
+
+    // ----------------------------------------------------------------
+    // Intégration des commandes de MainWindow
+    // ----------------------------------------------------------------
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            // Se désabonner d'abord pour éviter tout double abonnement si Loaded se redéclenche
+            mainWindow.CommandInvoked -= OnCommandInvoked;
+            mainWindow.CommandInvoked += OnCommandInvoked;
+            _parentMainWindow = mainWindow;
+        }
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_parentMainWindow != null)
+        {
+            _parentMainWindow.CommandInvoked -= OnCommandInvoked;
+            _parentMainWindow = null;
+        }
+        else if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            mainWindow.CommandInvoked -= OnCommandInvoked;
+        }
+    }
+
+    private void OnCommandInvoked(ICommand command)
+    {
+        // T20 : Rechercher et Remplacer seront traités ici
+        if (command == AppCommands.GoToLine)
+        {
+            ShowGoToLineDialog();
+        }
+    }
+
+    /// <summary>
+    /// Affiche la boîte de dialogue Aller à la ligne pour le document actif.
+    /// </summary>
+    public void ShowGoToLineDialog()
+    {
+        var window = Window.GetWindow(this) as MainWindow;
+
+        if (ActiveTab?.Content is not DocumentView activeDoc || Service.ActiveDocumentPath == null)
+        {
+            window?.SetStatus("Aucun fichier ouvert.");
+            return;
+        }
+
+        var dialog = new GoToLineWindow(activeDoc.CurrentLine, activeDoc.LineCount)
+        {
+            Owner = Window.GetWindow(this)
+        };
+
+        if (dialog.ShowDialog() == true && dialog.Line.HasValue)
+        {
+            Service.GoToLine(Service.ActiveDocumentPath, dialog.Line.Value, 1);
+        }
     }
 
     // ----------------------------------------------------------------

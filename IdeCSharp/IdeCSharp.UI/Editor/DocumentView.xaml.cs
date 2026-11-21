@@ -179,6 +179,16 @@ public partial class DocumentView : UserControl
     // ----------------------------------------------------------------
 
     /// <summary>
+    /// Nombre total de lignes dans le document.
+    /// </summary>
+    public int LineCount => CodeEditor.Document.LineCount;
+
+    /// <summary>
+    /// Numéro de ligne actuel du curseur (1-basé).
+    /// </summary>
+    public int CurrentLine => CodeEditor.TextArea.Caret.Line;
+
+    /// <summary>
     /// Place le curseur à la ligne et colonne indiquées, fait défiler
     /// la vue pour rendre le curseur visible et donne le focus.
     /// Les valeurs sont bornées aux limites réelles du document.
