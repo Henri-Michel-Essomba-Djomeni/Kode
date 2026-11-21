@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using IdeCSharp.Core.Interfaces;
 
@@ -20,6 +21,12 @@ public class EditorService : IEditorService
 
     // Chemin du document actif précédent, pour éviter les notifications redondantes
     private string? _previousActivePath;
+
+    /// <summary>
+    /// Point de branchement pour l'enregistrement d'un fichier (fourni par l'intégrateur via le module Fichiers).
+    /// Reçoit le chemin complet du document et retourne true si l'enregistrement a réussi.
+    /// </summary>
+    public Func<string, bool>? SaveHandler { get; set; }
 
     internal EditorService(EditorView view)
     {
@@ -91,8 +98,8 @@ public class EditorService : IEditorService
         if (!_documents.TryGetValue(key, out var entry))
             return true; // Pas ouvert, rien à faire
 
-        // T19 : demander confirmation si le document est modifié
-        if (!ConfirmClose(key, entry.Doc))
+        // Demande de confirmation si le document contient des modifications non enregistrées
+        if (!ConfirmClose(key, entry.Tab, entry.Doc))
             return false;
 
         _documents.Remove(key);
@@ -101,12 +108,66 @@ public class EditorService : IEditorService
     }
 
     /// <summary>
-    /// Vérifie si la fermeture est autorisée.
-    /// Retourne toujours true pour l'instant.
+    /// Vérifie si la fermeture est autorisée. Demande confirmation si le document est modifié.
     /// </summary>
-    // T19 : demander confirmation si le document est modifié
-    private bool ConfirmClose(string key, DocumentView doc)
+    private bool ConfirmClose(string key, TabItem tab, DocumentView doc)
     {
+        // Document non modifié : fermeture directe sans boîte de dialogue
+        if (!doc.IsModified)
+            return true;
+
+        // Active d'abord l'onglet du document concerné
+        _view.ActivateTab(tab);
+
+        string fileName = Path.GetFileName(key);
+        var owner = Window.GetWindow(_view);
+
+        if (SaveHandler != null)
+        {
+            string message = $"Voulez-vous enregistrer les modifications de « {fileName} » avant de le fermer ?";
+            var result = owner != null
+                ? MessageBox.Show(owner, message, "Kode", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning)
+                : MessageBox.Show(message, "Kode", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                return SaveHandler(key);
+            }
+
+            if (result == MessageBoxResult.No)
+            {
+                return true;
+            }
+
+            return false; // Annuler ou fermeture de la boîte de dialogue
+        }
+        else
+        {
+            string message = $"« {fileName} » contient des modifications non enregistrées. Les fermer quand même ?";
+            var result = owner != null
+                ? MessageBox.Show(owner, message, "Kode", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No)
+                : MessageBox.Show(message, "Kode", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+
+            return result == MessageBoxResult.Yes;
+        }
+    }
+
+    /// <summary>
+    /// Ferme tous les documents ouverts un par un.
+    /// S'arrête et retourne false dès qu'un document refuse la fermeture.
+    /// Retourne true si tous les documents ont été fermés avec succès.
+    /// </summary>
+    public bool CloseAll()
+    {
+        // Travaille sur une copie de la liste des chemins des documents ouverts
+        var paths = _documents.Keys.ToList();
+
+        foreach (var path in paths)
+        {
+            if (!CloseDocument(path))
+                return false;
+        }
+
         return true;
     }
 

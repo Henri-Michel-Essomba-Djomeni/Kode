@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,6 +13,9 @@ namespace IdeCSharp.UI.Editor;
 /// </summary>
 public partial class EditorView : UserControl
 {
+    // Maintient les abonnements pour pouvoir s'en détacher proprement à la fermeture de l'onglet
+    private readonly Dictionary<TabItem, EventHandler> _modifiedHandlers = new();
+
     /// <summary>
     /// Service gérant les opérations sur les documents (implémente IEditorService).
     /// </summary>
@@ -42,8 +46,8 @@ public partial class EditorView : UserControl
             ToolTip = fullPath
         };
 
-        // Construction de l'en-tête : nom du fichier + bouton de fermeture
-        tab.Header = CreateTabHeader(fullPath, tab);
+        // Construction de l'en-tête : nom du fichier + astérisque si modifié + bouton de fermeture
+        tab.Header = CreateTabHeader(fullPath, tab, documentView);
 
         TabDocuments.Items.Add(tab);
         TabDocuments.SelectedItem = tab;
@@ -57,6 +61,16 @@ public partial class EditorView : UserControl
     /// </summary>
     internal void RemoveTab(TabItem tab)
     {
+        // Désabonnement de l'événement ModifiedChanged
+        if (_modifiedHandlers.TryGetValue(tab, out var handler))
+        {
+            if (tab.Content is DocumentView docView)
+            {
+                docView.ModifiedChanged -= handler;
+            }
+            _modifiedHandlers.Remove(tab);
+        }
+
         int index = TabDocuments.Items.IndexOf(tab);
         TabDocuments.Items.Remove(tab);
 
@@ -119,17 +133,24 @@ public partial class EditorView : UserControl
     // En-tête d'onglet avec bouton de fermeture
     // ----------------------------------------------------------------
 
-    private object CreateTabHeader(string fullPath, TabItem tab)
+    private object CreateTabHeader(string fullPath, TabItem tab, DocumentView documentView)
     {
         string fileName = Path.GetFileName(fullPath);
 
         var textBlock = new TextBlock
         {
-            Text = fileName,
-            VerticalAlignment = VerticalAlignment.Center,
-            Foreground = (System.Windows.Media.Brush)FindResource("PanelForegroundBrush")
+            Text = documentView.IsModified ? $"{fileName} *" : fileName,
+            VerticalAlignment = VerticalAlignment.Center
         };
         textBlock.SetResourceReference(TextBlock.ForegroundProperty, "PanelForegroundBrush");
+
+        // Met à jour l'en-tête (ajout/retrait de l'astérisque) en fonction des modifications
+        EventHandler modifiedHandler = (_, _) =>
+        {
+            textBlock.Text = documentView.IsModified ? $"{fileName} *" : fileName;
+        };
+        documentView.ModifiedChanged += modifiedHandler;
+        _modifiedHandlers[tab] = modifiedHandler;
 
         var closeButton = new Button
         {
