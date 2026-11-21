@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Input;
+using IdeCSharp.Core.Services;
 
 namespace IdeCSharp.UI
 {
@@ -9,7 +10,8 @@ namespace IdeCSharp.UI
         // Tailles mémorisées pour retrouver la mise en page après un masquage
         private double _explorerWidth = 260;
         private double _bottomPanelHeight = 200;
-
+        private readonly TerminalService _terminal = new();
+        private readonly BottomPanelView _bottomTabs = new();
         /// <summary>
         /// Levé pour chaque commande non gérée par la fenêtre elle-même
         /// (Nouveau, Ouvrir, Enregistrer, Exécuter...). Les modules s'abonnent ici.
@@ -19,6 +21,16 @@ namespace IdeCSharp.UI
         public MainWindow()
         {
             InitializeComponent();
+
+            // On place les onglets SORTIE / TERMINAL dans le panneau du bas
+            SetBottomPanelContent(_bottomTabs);
+
+            // () => null : pour l'instant, la console démarre dans ton dossier utilisateur.
+            // Plus tard, on mettra le dossier du projet ouvert.
+            _bottomTabs.TerminalPane.Attach(_terminal, () => null);
+
+            // On ferme proprement la console quand la fenêtre se ferme
+            Closed += (_, _) => _terminal.Dispose();
         }
 
         // ------------------------------------------------------------------
