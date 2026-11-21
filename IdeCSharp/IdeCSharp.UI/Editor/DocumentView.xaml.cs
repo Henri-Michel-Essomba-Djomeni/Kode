@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Highlighting;
@@ -30,6 +31,10 @@ public partial class DocumentView : UserControl
         CodeEditor.Options.HighlightCurrentLine = true;
         CodeEditor.TextArea.TextView.SetResourceReference(TextView.CurrentLineBackgroundProperty, "SplitterBrush");
         CodeEditor.TextArea.TextView.CurrentLineBorder = new Pen(Brushes.Transparent, 0);
+
+        // Raccourci Ctrl+Maj+Z pour Rétablir (local au TextArea uniquement)
+        CodeEditor.TextArea.InputBindings.Add(
+            new KeyBinding(ApplicationCommands.Redo, Key.Z, ModifierKeys.Control | ModifierKeys.Shift));
 
         // Suivi de la modification du texte par l'utilisateur
         CodeEditor.TextChanged += OnTextChanged;

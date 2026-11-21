@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace IdeCSharp.UI.Editor;
 
@@ -47,6 +48,7 @@ public partial class EditorView : UserControl
         TabDocuments.Items.Add(tab);
         TabDocuments.SelectedItem = tab;
         UpdateVisibility();
+        DeferFocusToActiveDocument();
         return tab;
     }
 
@@ -66,6 +68,7 @@ public partial class EditorView : UserControl
         }
 
         UpdateVisibility();
+        DeferFocusToActiveDocument();
     }
 
     /// <summary>
@@ -74,12 +77,32 @@ public partial class EditorView : UserControl
     internal void ActivateTab(TabItem tab)
     {
         TabDocuments.SelectedItem = tab;
+        DeferFocusToActiveDocument();
     }
 
     /// <summary>
     /// Retourne l'onglet actuellement sélectionné, ou null.
     /// </summary>
     internal TabItem? ActiveTab => TabDocuments.SelectedItem as TabItem;
+
+    /// <summary>
+    /// Donne le focus à l'éditeur du document actif de manière différée,
+    /// garantissant que les raccourcis clavier et le menu Édition s'y appliquent.
+    /// Ne fait rien s'il n'y a aucun onglet.
+    /// </summary>
+    internal void DeferFocusToActiveDocument()
+    {
+        if (TabDocuments.Items.Count == 0)
+            return;
+
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (ActiveTab?.Content is DocumentView docView)
+            {
+                docView.FocusEditor();
+            }
+        }), DispatcherPriority.Input);
+    }
 
     // ----------------------------------------------------------------
     // Visibilité : message vide ou onglets
@@ -138,6 +161,10 @@ public partial class EditorView : UserControl
 
     private void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        Service.NotifyActiveTabChanged();
+        if (e.Source == TabDocuments)
+        {
+            Service.NotifyActiveTabChanged();
+            DeferFocusToActiveDocument();
+        }
     }
 }
