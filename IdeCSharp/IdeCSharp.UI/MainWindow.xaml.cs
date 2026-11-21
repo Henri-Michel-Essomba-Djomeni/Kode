@@ -16,9 +16,13 @@ namespace IdeCSharp.UI
         /// </summary>
         public event Action<ICommand>? CommandInvoked;
 
+        /// <summary>Aiguille les commandes vers les modules ; chaque module s'y branche.</summary>
+        public CommandRouter Router { get; }
+        
         public MainWindow()
         {
             InitializeComponent();
+            Router = new CommandRouter(this);
         }
 
         // ------------------------------------------------------------------
