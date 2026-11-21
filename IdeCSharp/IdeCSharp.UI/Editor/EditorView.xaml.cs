@@ -18,6 +18,7 @@ public partial class EditorView : UserControl
     private readonly Dictionary<TabItem, EventHandler> _modifiedHandlers = new();
 
     private MainWindow? _parentMainWindow;
+    private string _lastSearchText = string.Empty;
 
     /// <summary>
     /// Service gérant les opérations sur les documents (implémente IEditorService).
@@ -34,6 +35,13 @@ public partial class EditorView : UserControl
 
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+
+        // Connexion des événements de la barre de recherche / remplacement
+        FindBar.SearchChanged += OnFindBarSearchChanged;
+        FindBar.FindRequested += OnFindBarFindRequested;
+        FindBar.ReplaceRequested += OnFindBarReplaceRequested;
+        FindBar.ReplaceAllRequested += OnFindBarReplaceAllRequested;
+        FindBar.CloseRequested += OnFindBarCloseRequested;
     }
 
     // ----------------------------------------------------------------
@@ -66,12 +74,133 @@ public partial class EditorView : UserControl
 
     private void OnCommandInvoked(ICommand command)
     {
-        // T20 : Rechercher et Remplacer seront traités ici
+        // Traitement des commandes d'édition : navigation et recherche / remplacement
         if (command == AppCommands.GoToLine)
         {
             ShowGoToLineDialog();
         }
+        else if (command == ApplicationCommands.Find)
+        {
+            OpenFindReplace(replaceMode: false);
+        }
+        else if (command == ApplicationCommands.Replace)
+        {
+            OpenFindReplace(replaceMode: true);
+        }
     }
+
+    // ----------------------------------------------------------------
+    // Recherche et remplacement
+    // ----------------------------------------------------------------
+
+    private void OpenFindReplace(bool replaceMode)
+    {
+        var window = Window.GetWindow(this) as MainWindow;
+
+        if (ActiveTab?.Content is not DocumentView activeDoc || Service.ActiveDocumentPath == null)
+        {
+            window?.SetStatus("Aucun fichier ouvert.");
+            return;
+        }
+
+        string initialText = activeDoc.SelectedText;
+        if (string.IsNullOrEmpty(initialText) || initialText.Contains('\n') || initialText.Contains('\r'))
+        {
+            initialText = _lastSearchText;
+        }
+
+        FindBar.SetReadOnly(activeDoc.IsReadOnly);
+        FindBar.Open(replaceMode, initialText);
+        UpdateFindResults(activeDoc);
+    }
+
+    private void UpdateFindResults(DocumentView? doc = null)
+    {
+        doc ??= ActiveTab?.Content as DocumentView;
+        if (doc == null || string.IsNullOrEmpty(FindBar.SearchText))
+        {
+            FindBar.SetResult(string.Empty);
+            return;
+        }
+
+        _lastSearchText = FindBar.SearchText;
+        var (index, total) = doc.GetMatchInfo(FindBar.SearchText, FindBar.MatchCase);
+
+        if (total == -1)
+        {
+            FindBar.SetResult("Plus de 2 millions de caractères : décompte désactivé");
+        }
+        else if (total == 0)
+        {
+            FindBar.SetResult("Aucun résultat");
+        }
+        else if (index > 0)
+        {
+            FindBar.SetResult($"{index} sur {total}");
+        }
+        else
+        {
+            FindBar.SetResult($"{total} résultat{(total > 1 ? "s" : "")}");
+        }
+    }
+
+    private void OnFindBarSearchChanged(object? sender, EventArgs e)
+    {
+        if (ActiveTab?.Content is DocumentView activeDoc)
+        {
+            _lastSearchText = FindBar.SearchText;
+            if (!string.IsNullOrEmpty(FindBar.SearchText))
+            {
+                activeDoc.FindFromSelectionStart(FindBar.SearchText, FindBar.MatchCase);
+            }
+            UpdateFindResults(activeDoc);
+        }
+    }
+
+    private void OnFindBarFindRequested(bool forward)
+    {
+        if (ActiveTab?.Content is DocumentView activeDoc)
+        {
+            _lastSearchText = FindBar.SearchText;
+            bool found = activeDoc.FindNext(FindBar.SearchText, FindBar.MatchCase, forward);
+            if (!found)
+            {
+                FindBar.SetResult("Aucun résultat");
+            }
+            else
+            {
+                UpdateFindResults(activeDoc);
+            }
+        }
+    }
+
+    private void OnFindBarReplaceRequested(object? sender, EventArgs e)
+    {
+        if (ActiveTab?.Content is DocumentView activeDoc)
+        {
+            activeDoc.ReplaceCurrent(FindBar.SearchText, FindBar.ReplaceText, FindBar.MatchCase);
+            UpdateFindResults(activeDoc);
+        }
+    }
+
+    private void OnFindBarReplaceAllRequested(object? sender, EventArgs e)
+    {
+        if (ActiveTab?.Content is DocumentView activeDoc)
+        {
+            int count = activeDoc.ReplaceAll(FindBar.SearchText, FindBar.ReplaceText, FindBar.MatchCase);
+            FindBar.SetResult($"{count} remplacement{(count > 1 ? "s" : "")}");
+        }
+    }
+
+    private void OnFindBarCloseRequested(object? sender, EventArgs e)
+    {
+        FindBar.Visibility = Visibility.Collapsed;
+        DeferFocusToActiveDocument();
+    }
+
+    // ----------------------------------------------------------------
+    // Aller à la ligne
+    // ----------------------------------------------------------------
 
     /// <summary>
     /// Affiche la boîte de dialogue Aller à la ligne pour le document actif.
@@ -116,6 +245,15 @@ public partial class EditorView : UserControl
         // Construction de l'en-tête : nom du fichier + astérisque si modifié + bouton de fermeture
         tab.Header = CreateTabHeader(fullPath, tab, documentView);
 
+        // Mise à jour du compteur de recherche si le texte change pendant que la barre est visible
+        documentView.TextChanged += (_, _) =>
+        {
+            if (FindBar.Visibility == Visibility.Visible && ActiveTab?.Content == documentView)
+            {
+                UpdateFindResults(documentView);
+            }
+        };
+
         TabDocuments.Items.Add(tab);
         TabDocuments.SelectedItem = tab;
         UpdateVisibility();
@@ -146,6 +284,11 @@ public partial class EditorView : UserControl
         {
             int newIndex = Math.Min(index, TabDocuments.Items.Count - 1);
             TabDocuments.SelectedIndex = newIndex;
+        }
+        else
+        {
+            // Fermeture de la barre de recherche si le dernier onglet est fermé
+            FindBar.Visibility = Visibility.Collapsed;
         }
 
         UpdateVisibility();
@@ -253,6 +396,19 @@ public partial class EditorView : UserControl
         {
             Service.NotifyActiveTabChanged();
             DeferFocusToActiveDocument();
+
+            if (FindBar.Visibility == Visibility.Visible)
+            {
+                if (ActiveTab?.Content is DocumentView activeDoc)
+                {
+                    FindBar.SetReadOnly(activeDoc.IsReadOnly);
+                    UpdateFindResults(activeDoc);
+                }
+                else
+                {
+                    FindBar.Visibility = Visibility.Collapsed;
+                }
+            }
         }
     }
 }
