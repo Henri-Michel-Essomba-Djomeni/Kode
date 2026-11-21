@@ -1,6 +1,8 @@
 using System;
 using System.Windows.Controls;
+using System.Windows.Media;
 using ICSharpCode.AvalonEdit;
+using ICSharpCode.AvalonEdit.Rendering;
 
 namespace IdeCSharp.UI.Editor;
 
@@ -20,6 +22,11 @@ public partial class DocumentView : UserControl
     public DocumentView()
     {
         InitializeComponent();
+
+        // Surlignage de la ligne courante sans cadre, synchronisé avec le thème
+        CodeEditor.Options.HighlightCurrentLine = true;
+        CodeEditor.TextArea.TextView.SetResourceReference(TextView.CurrentLineBackgroundProperty, "SplitterBrush");
+        CodeEditor.TextArea.TextView.CurrentLineBorder = new Pen(Brushes.Transparent, 0);
 
         // Suivi de la modification du texte par l'utilisateur
         CodeEditor.TextChanged += OnTextChanged;

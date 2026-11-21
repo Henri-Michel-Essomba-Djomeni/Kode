@@ -10,5 +10,6 @@
                        WordWrap="False"
                        HorizontalScrollBarVisibility="Auto"
                        VerticalScrollBarVisibility="Auto"
-                       ShowLineNumbers="False"/>
+                       ShowLineNumbers="True"
+                       LineNumbersForeground="{DynamicResource MutedForegroundBrush}"/>
 </UserControl>
