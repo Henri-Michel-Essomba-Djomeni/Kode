@@ -1,7 +1,10 @@
 using System;
+using System.IO;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using ICSharpCode.AvalonEdit;
+using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Rendering;
 
 namespace IdeCSharp.UI.Editor;
@@ -37,6 +40,45 @@ public partial class DocumentView : UserControl
             var caret = CodeEditor.TextArea.Caret;
             CaretPositionChanged?.Invoke(caret.Line, caret.Column);
         };
+
+        // Gestion du thème pour la coloration syntaxique
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        SyntaxTheme.Apply(SyntaxTheme.IsDarkTheme());
+        ThemeManager.ThemeChanged += OnThemeChanged;
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        ThemeManager.ThemeChanged -= OnThemeChanged;
+    }
+
+    private void OnThemeChanged(bool dark)
+    {
+        SyntaxTheme.Apply(dark);
+        CodeEditor.TextArea.TextView.Redraw();
+    }
+
+    // ----------------------------------------------------------------
+    // Langage et coloration syntaxique
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Nom de la définition de coloration syntaxique active, ou « Texte brut ».
+    /// </summary>
+    public string LanguageName => CodeEditor.SyntaxHighlighting?.Name ?? "Texte brut";
+
+    /// <summary>
+    /// Définit la coloration syntaxique selon l'extension du fichier (null / texte brut si inconnue).
+    /// </summary>
+    public void SetLanguageFromPath(string path)
+    {
+        string extension = Path.GetExtension(path);
+        CodeEditor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinitionByExtension(extension);
     }
 
     // ----------------------------------------------------------------

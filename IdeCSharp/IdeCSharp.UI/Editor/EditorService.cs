@@ -58,6 +58,9 @@ public class EditorService : IEditorService
         var tab = _view.AddTab(key, docView);
         _documents[key] = (tab, docView);
 
+        // Configuration de la coloration syntaxique d'après l'extension
+        docView.SetLanguageFromPath(path);
+
         // Chargement du contenu (non modifié, historique vidé)
         docView.LoadText(content);
         docView.FocusEditor();
@@ -220,6 +223,21 @@ public class EditorService : IEditorService
         {
             var tab = _view.ActiveTab;
             return tab?.Tag as string;
+        }
+    }
+
+    /// <summary>
+    /// Nom du langage du document actif, ou « Texte brut » s'il n'y en a pas.
+    /// </summary>
+    public string ActiveLanguageName
+    {
+        get
+        {
+            string? activePath = ActiveDocumentPath;
+            if (activePath != null && _documents.TryGetValue(activePath, out var entry))
+                return entry.Doc.LanguageName;
+
+            return "Texte brut";
         }
     }
 
