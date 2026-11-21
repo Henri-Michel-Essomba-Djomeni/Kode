@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,7 +22,7 @@ public sealed class ExecutionService : IExecutionService
 
     // fichier(ligne,col): error CS1002: message [projet.csproj]
     private static readonly Regex DiagnosticRegex = new(
-        @"^(?<file>.+?)\((?<line>\d+),(?<col>\d+)\):\s+(?<sev>error|warning)\s+(?<code>\w+):\s+(?<msg>.?)(\s+\[[^\]]\.csproj\])?\s*$",
+        @"^(?<file>.+?)\((?<line>\d+),(?<col>\d+)\):\s+(?<sev>error|warning)\s+(?<code>\w+):\s+(?<msg>.*?)(\s+\[[^\]]*\.csproj\])?\s*$",
         RegexOptions.Compiled);
 
     private readonly object _sync = new();
@@ -231,25 +232,77 @@ public sealed class ExecutionService : IExecutionService
         };
 
         using var process = new Process { StartInfo = psi };
-        process.OutputDataReceived += (_, e) => { if (e.Data != null) onLine(e.Data); };
-        process.ErrorDataReceived += (_, e) => { if (e.Data != null) onLine(e.Data); };
 
         using var registration = ct.Register(() => KillCurrent());   // annulation = arrêt du processus
 
         process.Start();
         lock (_sync) _current = process;
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
+
+        // Lecture caractère par caractère (et non ligne par ligne) pour voir aussi
+        // les questions sans retour à la ligne, comme Console.Write("Ton prénom ? ")
+        var lectureSortie = PumpAsync(process.StandardOutput, onLine);
+        var lectureErreurs = PumpAsync(process.StandardError, onLine);
 
         try
         {
             await process.WaitForExitAsync();
+
+            // On laisse un peu de temps pour vider les flux (sécurité : on n'attend jamais plus de 2 s)
+            await Task.WhenAny(Task.WhenAll(lectureSortie, lectureErreurs), Task.Delay(2000));
             return process.ExitCode;
         }
         finally
         {
             lock (_sync) _current = null;
         }
+    }
+
+    /// <summary>
+    /// Lit un flux et envoie du texte à onLine : une ligne complète dès qu'elle est terminée,
+    /// ou le texte en attente si plus rien n'arrive pendant 150 ms (cas d'une question sans retour à la ligne).
+    /// </summary>
+    private static async Task PumpAsync(StreamReader reader, Action<string> onLine)
+    {
+        var buffer = new char[1024];
+        var ligne = new StringBuilder();
+        var lecture = reader.ReadAsync(buffer, 0, buffer.Length);
+
+        while (true)
+        {
+            var terminee = await Task.WhenAny(lecture, Task.Delay(150));
+
+            if (terminee != lecture)
+            {
+                // 150 ms de silence : on affiche ce qui est en attente (une question, par exemple)
+                if (ligne.Length > 0)
+                {
+                    onLine(ligne.ToString());
+                    ligne.Clear();
+                }
+                continue;   // on continue d'attendre la même lecture
+            }
+
+            int n = await lecture;
+            if (n == 0) break;   // fin du flux
+
+            for (int i = 0; i < n; i++)
+            {
+                char c = buffer[i];
+                if (c == '\n')
+                {
+                    onLine(ligne.ToString().TrimEnd('\r'));
+                    ligne.Clear();
+                }
+                else
+                {
+                    ligne.Append(c);
+                }
+            }
+
+            lecture = reader.ReadAsync(buffer, 0, buffer.Length);
+        }
+
+        if (ligne.Length > 0) onLine(ligne.ToString());
     }
 
     private bool TryBegin()
