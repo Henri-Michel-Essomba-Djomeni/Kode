@@ -127,9 +127,7 @@
                 <Border x:Name="BottomPanel" Grid.Row="2"
                         Background="{DynamicResource PanelBackgroundBrush}">
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Top" Text="SORTIE"
-                                   FontSize="11" FontWeight="SemiBold" Margin="10,6,10,4"
-                                   Foreground="{DynamicResource PanelForegroundBrush}"/>
+
                         <ContentControl x:Name="BottomHost">
                             <TextBlock Text="La sortie des programmes s'affichera ici."
                                        Margin="10" Foreground="{DynamicResource MutedForegroundBrush}"/>
