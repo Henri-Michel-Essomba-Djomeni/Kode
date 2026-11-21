@@ -1,0 +1,171 @@
+using System;
+using System.Windows.Controls;
+using ICSharpCode.AvalonEdit;
+
+namespace IdeCSharp.UI.Editor;
+
+/// <summary>
+/// Vue d'un document unique : encapsule un TextEditor AvalonEdit
+/// avec le suivi de modification, l'annulation et la navigation.
+/// </summary>
+public partial class DocumentView : UserControl
+{
+    // Drapeau empêchant de passer en « modifié » pendant un LoadText.
+    private bool _chargementEnCours;
+    private bool _isModified;
+
+    /// <summary>
+    /// Initialise une nouvelle instance du composant <see cref="DocumentView"/>.
+    /// </summary>
+    public DocumentView()
+    {
+        InitializeComponent();
+
+        // Suivi de la modification du texte par l'utilisateur
+        CodeEditor.TextChanged += OnTextChanged;
+
+        // Suivi de la position du curseur
+        CodeEditor.TextArea.Caret.PositionChanged += (_, _) =>
+        {
+            var caret = CodeEditor.TextArea.Caret;
+            CaretPositionChanged?.Invoke(caret.Line, caret.Column);
+        };
+    }
+
+    // ----------------------------------------------------------------
+    // Texte et chargement
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Obtient le texte actuellement contenu dans l'éditeur.
+    /// </summary>
+    public string Text => CodeEditor.Text;
+
+    /// <summary>
+    /// Charge un nouveau texte dans l'éditeur, vide l'historique
+    /// d'annulation et remet l'état de modification à faux.
+    /// </summary>
+    public void LoadText(string text)
+    {
+        _chargementEnCours = true;
+        try
+        {
+            CodeEditor.Text = text;
+            CodeEditor.Document.UndoStack.ClearAll();
+            SetModified(false);
+        }
+        finally
+        {
+            _chargementEnCours = false;
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // Modification
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Indique si le texte a été modifié depuis le dernier chargement
+    /// ou le dernier appel à <see cref="MarkAsSaved"/>.
+    /// </summary>
+    public bool IsModified => _isModified;
+
+    /// <summary>
+    /// Déclenché quand la valeur de <see cref="IsModified"/> change.
+    /// </summary>
+    public event EventHandler? ModifiedChanged;
+
+    /// <summary>
+    /// Marque le document comme sauvegardé (non modifié).
+    /// </summary>
+    public void MarkAsSaved()
+    {
+        SetModified(false);
+    }
+
+    private void SetModified(bool value)
+    {
+        if (_isModified == value)
+            return;
+        _isModified = value;
+        ModifiedChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnTextChanged(object? sender, EventArgs e)
+    {
+        // Pendant un LoadText on ne touche pas au drapeau
+        if (!_chargementEnCours)
+            SetModified(true);
+    }
+
+    // ----------------------------------------------------------------
+    // Annuler / Rétablir
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Annule la dernière action si possible.
+    /// </summary>
+    public void Undo()
+    {
+        if (CodeEditor.Document.UndoStack.CanUndo)
+            CodeEditor.Undo();
+    }
+
+    /// <summary>
+    /// Rétablit la dernière action annulée si possible.
+    /// </summary>
+    public void Redo()
+    {
+        if (CodeEditor.Document.UndoStack.CanRedo)
+            CodeEditor.Redo();
+    }
+
+    // ----------------------------------------------------------------
+    // Navigation
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Place le curseur à la ligne et colonne indiquées, fait défiler
+    /// la vue pour rendre le curseur visible et donne le focus.
+    /// Les valeurs sont bornées aux limites réelles du document.
+    /// </summary>
+    public void GoTo(int line, int column)
+    {
+        int totalLines = CodeEditor.Document.LineCount;
+
+        // Borner la ligne entre 1 et le nombre total de lignes
+        line = Math.Clamp(line, 1, totalLines);
+
+        var docLine = CodeEditor.Document.GetLineByNumber(line);
+        int maxColumn = docLine.Length + 1;
+
+        // Borner la colonne entre 1 et la longueur de la ligne + 1
+        column = Math.Clamp(column, 1, maxColumn);
+
+        CodeEditor.TextArea.Caret.Line = line;
+        CodeEditor.TextArea.Caret.Column = column;
+        CodeEditor.ScrollToLine(line);
+        CodeEditor.TextArea.Focus();
+    }
+
+    // ----------------------------------------------------------------
+    // Position du curseur
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Déclenché quand la position du curseur change (ligne, colonne).
+    /// </summary>
+    public event Action<int, int>? CaretPositionChanged;
+
+    // ----------------------------------------------------------------
+    // Focus
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Donne le focus au composant d'édition de code.
+    /// </summary>
+    public void FocusEditor()
+    {
+        CodeEditor.Focus();
+    }
+}
