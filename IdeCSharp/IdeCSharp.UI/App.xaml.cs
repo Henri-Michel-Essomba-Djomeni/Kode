@@ -9,6 +9,11 @@ namespace IdeCSharp.UI
     /// </summary>
     public partial class App : Application
     {
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            ThemeManager.Apply(AppTheme.System);
+            base.OnStartup(e);
+        }
     }
 
 }
