@@ -39,3 +39,7 @@ project.assets.json
 ## OS files
 .DS_Store
 Thumbs.db
+
+## Publication et installateur
+publish/
+Output/

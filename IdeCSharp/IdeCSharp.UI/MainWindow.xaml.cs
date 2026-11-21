@@ -16,9 +16,13 @@ namespace IdeCSharp.UI
         /// </summary>
         public event Action<ICommand>? CommandInvoked;
 
+        /// <summary>Aiguille les commandes vers les modules ; chaque module s'y branche.</summary>
+        public CommandRouter Router { get; }
+        
         public MainWindow()
         {
             InitializeComponent();
+            Router = new CommandRouter(this);
         }
 
         // ------------------------------------------------------------------
@@ -80,8 +84,7 @@ namespace IdeCSharp.UI
 
             if (e.Command == AppCommands.About)
             {
-                MessageBox.Show(this, "Kode — projet académique KEYCE.\nUn IDE simple, fluide et intuitif.",
-                    "À propos de Kode", MessageBoxButton.OK, MessageBoxImage.Information);
+                new AboutWindow { Owner = this }.ShowDialog();
                 return;
             }
 
