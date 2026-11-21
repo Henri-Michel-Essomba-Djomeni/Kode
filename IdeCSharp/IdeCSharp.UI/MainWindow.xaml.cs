@@ -1,14 +1,9 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Input;
 
-namespace IdeCSharp
+namespace IdeCSharp.UI
 {
-    /// <summary>
-    /// Fenêtre principale de Kode. Elle ne contient pas de logique métier :
-    /// elle fournit des zones d'accueil (explorateur, éditeur, panneau du bas)
-    /// et relaie les commandes aux modules qui s'y branchent.
-    /// </summary>
     public partial class MainWindow : Window
     {
         // Tailles mémorisées pour retrouver la mise en page après un masquage
@@ -64,6 +59,16 @@ namespace IdeCSharp
             if (e.Command == AppCommands.ToggleBottomPanel)
             {
                 ToggleBottomPanel();
+                return;
+            }
+
+            if (e.Command == AppCommands.SetTheme)
+            {
+                if (Enum.TryParse<AppTheme>(e.Parameter as string, out var theme))
+                {
+                    ThemeManager.Apply(theme);
+                    SetStatus($"Thème appliqué : {theme}");
+                }
                 return;
             }
 

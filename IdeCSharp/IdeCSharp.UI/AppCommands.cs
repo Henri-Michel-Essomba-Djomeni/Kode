@@ -1,6 +1,6 @@
 using System.Windows.Input;
 
-namespace IdeCSharp
+namespace IdeCSharp.UI
 {
     /// <summary>
     /// Toutes les commandes de l'IDE au même endroit : menus et raccourcis clavier
@@ -30,6 +30,9 @@ namespace IdeCSharp
 
         public static readonly RoutedUICommand ToggleBottomPanel = Create("Panneau du bas", nameof(ToggleBottomPanel),
             new KeyGesture(Key.J, ModifierKeys.Control));
+
+        // Le paramètre de la commande vaut « Light », « Dark » ou « System »
+        public static readonly RoutedUICommand SetTheme = Create("Changer de thème", nameof(SetTheme));
 
         public static readonly RoutedUICommand About = Create("À propos de Kode", nameof(About));
 
