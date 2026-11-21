@@ -8,6 +8,7 @@ namespace IdeCSharp.UI
         public AboutWindow()
         {
             InitializeComponent();
+            SourceInitialized += (_, _) => WindowStyler.SetDarkTitleBar(this, ThemeManager.IsDark);
 
             // La version vient de l'assemblage : un seul endroit à changer plus tard
             var version = Assembly.GetExecutingAssembly().GetName().Version;

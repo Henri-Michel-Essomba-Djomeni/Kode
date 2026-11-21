@@ -38,6 +38,9 @@ namespace IdeCSharp.UI
 
         public static readonly RoutedUICommand Exit = Create("Quitter", nameof(Exit));
 
+        public static readonly RoutedUICommand ShowExtensions = Create("Extensions", nameof(ShowExtensions),
+        new KeyGesture(Key.X, ModifierKeys.Control | ModifierKeys.Shift));
+
         private static RoutedUICommand Create(string text, string name, params InputGesture[] gestures)
         {
             var gestureCollection = new InputGestureCollection();

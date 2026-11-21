@@ -18,11 +18,14 @@ namespace IdeCSharp.UI
 
         /// <summary>Aiguille les commandes vers les modules ; chaque module s'y branche.</summary>
         public CommandRouter Router { get; }
-        
+
         public MainWindow()
         {
             InitializeComponent();
             Router = new CommandRouter(this);
+            // Barre de titre sombre ou claire selon le thème
+            SourceInitialized += (_, _) => WindowStyler.SetDarkTitleBar(this, ThemeManager.IsDark);
+            ThemeManager.ThemeChanged += dark => WindowStyler.SetDarkTitleBar(this, dark);
         }
 
         // ------------------------------------------------------------------
@@ -53,6 +56,13 @@ namespace IdeCSharp.UI
 
         private void OnCommandExecuted(object sender, ExecutedRoutedEventArgs e)
         {
+
+            if (e.Command == AppCommands.ShowExtensions)
+            {
+                ShowSidebarView(SidebarView.Extensions);
+                return;
+            }
+
             // Les commandes d'affichage et de fenêtre sont gérées ici
             if (e.Command == AppCommands.ToggleExplorer)
             {
@@ -99,14 +109,68 @@ namespace IdeCSharp.UI
             CommandInvoked.Invoke(e.Command);
         }
 
+        // Bouton en bas de la barre d'activité : passe de clair à sombre et inversement
+        private void OnThemeButtonClick(object sender, RoutedEventArgs e)
+        {
+            ThemeManager.Apply(ThemeManager.IsDark ? AppTheme.Light : AppTheme.Dark);
+            SetStatus(ThemeManager.IsDark ? "Thème sombre" : "Thème clair");
+        }
+
         // ------------------------------------------------------------------
         // Affichage des panneaux
         // ------------------------------------------------------------------
 
+        private enum SidebarView
+        {
+            Explorer,
+            Extensions
+        }
+
+        private SidebarView _currentView = SidebarView.Explorer;
+
+        private void OnExplorerButtonClick(object sender, RoutedEventArgs e) => ShowSidebarView(SidebarView.Explorer);
+
+        private void OnExtensionsButtonClick(object sender, RoutedEventArgs e) => ShowSidebarView(SidebarView.Extensions);
+
+        // Affiche une vue dans la colonne de gauche ; recliquer sur la vue ouverte referme la colonne
+        private void ShowSidebarView(SidebarView view)
+        {
+            bool panelVisible = ExplorerPanel.Visibility == Visibility.Visible;
+
+            if (panelVisible && _currentView == view)
+            {
+                ToggleExplorer();
+                return;
+            }
+
+            _currentView = view;
+            ExplorerView.Visibility = view == SidebarView.Explorer ? Visibility.Visible : Visibility.Collapsed;
+            ExtensionsPanelView.Visibility = view == SidebarView.Extensions ? Visibility.Visible : Visibility.Collapsed;
+
+            if (!panelVisible)
+            {
+                ToggleExplorer();   // la colonne était repliée : on la rouvre
+            }
+            else
+            {
+                UpdateIndicators();
+            }
+        }
+
+        // Le trait violet n'apparaît que devant la vue actuellement ouverte
+        private void UpdateIndicators()
+        {
+            bool visible = ExplorerPanel.Visibility == Visibility.Visible;
+            ExplorerIndicator.Visibility = visible && _currentView == SidebarView.Explorer
+                ? Visibility.Visible : Visibility.Hidden;
+            ExtensionsIndicator.Visibility = visible && _currentView == SidebarView.Extensions
+                ? Visibility.Visible : Visibility.Hidden;
+        }
+
         private void ToggleExplorer()
         {
             bool isVisible = ExplorerPanel.Visibility == Visibility.Visible;
-
+        
             if (isVisible)
             {
                 // On retient la largeur actuelle avant de replier la colonne
@@ -123,6 +187,8 @@ namespace IdeCSharp.UI
                 ExplorerColumn.MinWidth = 150;
                 ExplorerColumn.Width = new GridLength(_explorerWidth);
             }
+        
+            UpdateIndicators();
         }
 
         private void ToggleBottomPanel()
