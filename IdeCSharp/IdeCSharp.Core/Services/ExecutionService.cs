@@ -123,7 +123,7 @@ public sealed class ExecutionService : IExecutionService
             {
                 lock (erreurs) erreurs.Add(new BuildError(fichier, numLigne, colonne, message));
             }
-        }, ct);
+        }, ct, Encoding.UTF8);
 
         return new BuildResult(exitCode == 0, erreurs);
     }
@@ -218,7 +218,7 @@ public sealed class ExecutionService : IExecutionService
 
     /// <summary>Lance "dotnet &lt;arguments&gt;", lit les sorties ligne par ligne, retourne le code de sortie.</summary>
     private async Task<int> ExecuteAsync(
-        string arguments, bool redirectInput, Action<string> onLine, CancellationToken ct)
+        string arguments, bool redirectInput, Action<string> onLine, CancellationToken ct, Encoding? encoding = null)
     {
         var psi = new ProcessStartInfo
         {
@@ -227,6 +227,9 @@ public sealed class ExecutionService : IExecutionService
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             RedirectStandardInput = redirectInput,
+            StandardOutputEncoding = new UTF8Encoding(false),
+            StandardErrorEncoding = new UTF8Encoding(false),
+            StandardInputEncoding = redirectInput ? new UTF8Encoding(false) : null,
             UseShellExecute = false,
             CreateNoWindow = true
         };

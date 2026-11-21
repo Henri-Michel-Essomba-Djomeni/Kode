@@ -23,6 +23,7 @@ namespace IdeCSharp.UI
         {
             InitializeComponent();
             Router = new CommandRouter(this);
+            InitExecutionModule();
         }
 
         // ------------------------------------------------------------------
