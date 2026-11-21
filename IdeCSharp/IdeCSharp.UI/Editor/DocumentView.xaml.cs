@@ -7,13 +7,15 @@ using System.Windows.Input;
 using System.Windows.Media;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Highlighting;
+using ICSharpCode.AvalonEdit.Indentation;
+using ICSharpCode.AvalonEdit.Indentation.CSharp;
 using ICSharpCode.AvalonEdit.Rendering;
 
 namespace IdeCSharp.UI.Editor;
 
 /// <summary>
 /// Vue d'un document unique : encapsule un TextEditor AvalonEdit
-/// avec le suivi de modification, l'annulation et la navigation.
+/// avec le suivi de modification, l'annulation, l'auto-indentation et la navigation.
 /// </summary>
 public partial class DocumentView : UserControl
 {
@@ -28,6 +30,9 @@ public partial class DocumentView : UserControl
     {
         InitializeComponent();
 
+        // Stratégie d'indentation par défaut
+        CodeEditor.TextArea.IndentationStrategy = new DefaultIndentationStrategy();
+
         // Surlignage de la ligne courante sans cadre, synchronisé avec le thème
         CodeEditor.Options.HighlightCurrentLine = true;
         CodeEditor.TextArea.TextView.SetResourceReference(TextView.CurrentLineBackgroundProperty, "SplitterBrush");
@@ -36,6 +41,9 @@ public partial class DocumentView : UserControl
         // Raccourci Ctrl+Maj+Z pour Rétablir (local au TextArea uniquement)
         CodeEditor.TextArea.InputBindings.Add(
             new KeyBinding(ApplicationCommands.Redo, Key.Z, ModifierKeys.Control | ModifierKeys.Shift));
+
+        // T35 : désactiver aussi en mode gros fichier
+        AutoPairs.Attach(CodeEditor, () => CodeEditor.SyntaxHighlighting != null && !CodeEditor.IsReadOnly);
 
         // Suivi de la modification du texte par l'utilisateur
         CodeEditor.TextChanged += OnTextChanged;
@@ -79,12 +87,22 @@ public partial class DocumentView : UserControl
     public string LanguageName => CodeEditor.SyntaxHighlighting?.Name ?? "Texte brut";
 
     /// <summary>
-    /// Définit la coloration syntaxique selon l'extension du fichier (null / texte brut si inconnue).
+    /// Définit la coloration syntaxique et la stratégie d'indentation selon l'extension du fichier.
     /// </summary>
     public void SetLanguageFromPath(string path)
     {
         string extension = Path.GetExtension(path);
-        CodeEditor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinitionByExtension(extension);
+        var definition = HighlightingManager.Instance.GetDefinitionByExtension(extension);
+        CodeEditor.SyntaxHighlighting = definition;
+
+        if (definition != null && string.Equals(definition.Name, "C#", StringComparison.OrdinalIgnoreCase))
+        {
+            CodeEditor.TextArea.IndentationStrategy = new CSharpIndentationStrategy(CodeEditor.Options);
+        }
+        else
+        {
+            CodeEditor.TextArea.IndentationStrategy = new DefaultIndentationStrategy();
+        }
     }
 
     // ----------------------------------------------------------------
