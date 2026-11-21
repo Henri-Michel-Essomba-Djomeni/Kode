@@ -12,22 +12,27 @@ namespace IdeCSharp.UI
         private double _bottomPanelHeight = 200;
         private readonly TerminalService _terminal = new();
         private readonly BottomPanelView _bottomTabs = new();
+
         /// <summary>
         /// Levé pour chaque commande non gérée par la fenêtre elle-même
         /// (Nouveau, Ouvrir, Enregistrer, Exécuter...). Les modules s'abonnent ici.
         /// </summary>
         public event Action<ICommand>? CommandInvoked;
 
+        /// <summary>Aiguille les commandes vers les modules ; chaque module s'y branche.</summary>
+        public CommandRouter Router { get; }
+
         public MainWindow()
         {
             InitializeComponent();
+            Router = new CommandRouter(this);
 
             // On place les onglets SORTIE / TERMINAL dans le panneau du bas
             SetBottomPanelContent(_bottomTabs);
 
-            // () => null : pour l'instant, la console démarre dans ton dossier utilisateur.
-            // Plus tard, on mettra le dossier du projet ouvert.
-            _bottomTabs.TerminalPane.Attach(_terminal, () => null);
+            // La console démarre dans le dossier du projet ouvert (Ctrl+Maj+O),
+            // ou dans le dossier utilisateur si aucun dossier n'est ouvert.
+            _bottomTabs.TerminalPane.Attach(_terminal, () => Router.CurrentFolder);
 
             // On ferme proprement la console quand la fenêtre se ferme
             Closed += (_, _) => _terminal.Dispose();
@@ -92,8 +97,7 @@ namespace IdeCSharp.UI
 
             if (e.Command == AppCommands.About)
             {
-                MessageBox.Show(this, "Kode — projet académique KEYCE.\nUn IDE simple, fluide et intuitif.",
-                    "À propos de Kode", MessageBoxButton.OK, MessageBoxImage.Information);
+                new AboutWindow { Owner = this }.ShowDialog();
                 return;
             }
 
