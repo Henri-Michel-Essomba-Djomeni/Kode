@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using IdeCSharp.Core.Interfaces;
 using IdeCSharp.Core.Models;
 
@@ -19,6 +20,15 @@ namespace IdeCSharp.UI
         private readonly TreeView _tree;
         private TreeViewItem? _rootItem;
 
+        // Mise à jour automatique (T32) : on surveille le disque et on rafraîchit l'arbre.
+        private FileSystemWatcher? _watcher;
+        private readonly DispatcherTimer _refreshTimer;
+        private readonly HashSet<string> _pendingDirs = new(StringComparer.OrdinalIgnoreCase);
+        private HashSet<string>? _restoreExpanded; // dossiers à re-déplier pendant un rechargement
+
+        // Dossiers ignorés par la surveillance : une compilation y change des centaines de fichiers.
+        private static readonly string[] IgnoredFolders = { "bin", "obj", ".git", ".vs" };
+
         public FileExplorer(MainWindow window, IFileService files)
         {
             _window = window;
@@ -28,6 +38,11 @@ namespace IdeCSharp.UI
             _tree.MouseDoubleClick += OnDoubleClick;
             _tree.PreviewMouseRightButtonDown += OnRightClick;
             _tree.ContextMenu = BuildContextMenu();
+
+            // On attend 400 ms de calme avant de rafraîchir : une copie de 50 fichiers = un seul rafraîchissement.
+            _refreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+            _refreshTimer.Tick += OnRefreshTick;
+            _window.Closed += (_, _) => _watcher?.Dispose();
 
             // Branchement du module Fichiers sur le routeur de Michel
             _window.Router.Files = files;
@@ -55,6 +70,7 @@ namespace IdeCSharp.UI
             _rootItem.IsExpanded = true; // déclenche le chargement du premier niveau
 
             _window.SetExplorerContent(_tree);
+            StartWatching(folder);
         }
 
         // ------------------------------------------------------------------
@@ -63,10 +79,75 @@ namespace IdeCSharp.UI
 
         private TreeViewItem CreateFolderItem(FileNode node)
         {
-            var item = new TreeViewItem { Header = node.Name, Tag = node };
+            var item = new TreeViewItem { Header = CreateHeader(node.Name, "📁", FolderBrush), Tag = node };
             item.Items.Add("…"); // élément factice : fait apparaître la flèche de dépliage
             item.Expanded += OnExpanded;
+
+            // Pendant un rechargement, on re-déplie les dossiers qui l'étaient avant.
+            if (_restoreExpanded?.Contains(node.FullPath) == true)
+                item.IsExpanded = true;
+
             return item;
+        }
+
+        // ------------------------------------------------------------------
+        // Icônes par type de fichier (T31)
+        // Couleurs de milieu de gamme : lisibles sur le thème clair comme sur le thème sombre.
+        // ------------------------------------------------------------------
+
+        private static readonly Brush FolderBrush = MakeBrush(0xDC, 0xB6, 0x7A);
+        private static readonly Brush PurpleBrush = MakeBrush(0xA3, 0x71, 0xF7);
+        private static readonly Brush GoldBrush = MakeBrush(0xD4, 0xA7, 0x2C);
+        private static readonly Brush OrangeBrush = MakeBrush(0xE8, 0x83, 0x3A);
+        private static readonly Brush GrayBrush = MakeBrush(0x8B, 0x94, 0x9E);
+
+        private static Brush MakeBrush(byte r, byte g, byte b)
+        {
+            var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
+            brush.Freeze(); // un pinceau figé est plus léger et partageable
+            return brush;
+        }
+
+        private static TreeViewItem CreateFileItem(FileNode node)
+        {
+            var (glyph, brush, bold) = IconFor(node.Name);
+            return new TreeViewItem { Header = CreateHeader(node.Name, glyph, brush, bold), Tag = node };
+        }
+
+        /// <summary>Choisit le symbole et la couleur d'après l'extension du fichier.</summary>
+        private static (string Glyph, Brush? Brush, bool Bold) IconFor(string fileName) =>
+            Path.GetExtension(fileName).ToLowerInvariant() switch
+            {
+                ".cs" => ("C#", PurpleBrush, true),
+                ".csproj" or ".sln" or ".slnx" => ("⚙", PurpleBrush, false),
+                ".json" => ("{}", GoldBrush, true),
+                ".xml" or ".xaml" or ".config" => ("</>", OrangeBrush, true),
+                ".md" or ".txt" => ("📝", null, false),
+                ".png" or ".jpg" or ".jpeg" or ".gif" or ".svg" or ".ico" => ("🖼", null, false),
+                ".exe" or ".dll" => ("⚙", GrayBrush, false),
+                _ => ("📄", null, false)
+            };
+
+        /// <summary>Construit « icône + nom » pour une ligne de l'arbre.</summary>
+        private static StackPanel CreateHeader(string name, string glyph, Brush? glyphBrush, bool bold = false)
+        {
+            var icon = new TextBlock
+            {
+                Text = glyph,
+                Width = 26,
+                Margin = new Thickness(0, 0, 4, 0),
+                TextAlignment = TextAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                FontSize = bold ? 11 : 13,
+                FontWeight = bold ? FontWeights.Bold : FontWeights.Normal
+            };
+            if (glyphBrush != null)
+                icon.Foreground = glyphBrush;
+
+            var panel = new StackPanel { Orientation = Orientation.Horizontal };
+            panel.Children.Add(icon);
+            panel.Children.Add(new TextBlock { Text = name, VerticalAlignment = VerticalAlignment.Center });
+            return panel;
         }
 
         private void OnExpanded(object sender, RoutedEventArgs e)
@@ -92,7 +173,7 @@ namespace IdeCSharp.UI
                 {
                     folderItem.Items.Add(child.IsDirectory
                         ? CreateFolderItem(child)
-                        : new TreeViewItem { Header = child.Name, Tag = child });
+                        : CreateFileItem(child));
                 }
             }
             catch (IOException ex) // inclut DirectoryNotFoundException
@@ -102,11 +183,37 @@ namespace IdeCSharp.UI
         }
 
         /// <summary>Relit le contenu d'un dossier de l'arbre (après création, renommage, suppression).</summary>
-        private void ReloadFolder(TreeViewItem folderItem)
+        private void ReloadFolder(TreeViewItem folderItem, bool expand = true)
         {
-            folderItem.Items.Clear();
-            LoadChildren(folderItem);
-            folderItem.IsExpanded = true;
+            // On mémorise les sous-dossiers ouverts pour ne pas tout replier à chaque rechargement.
+            var expanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            CollectExpanded(folderItem, expanded);
+
+            _restoreExpanded = expanded;
+            try
+            {
+                folderItem.Items.Clear();
+                LoadChildren(folderItem);
+            }
+            finally
+            {
+                _restoreExpanded = null;
+            }
+
+            if (expand)
+                folderItem.IsExpanded = true;
+        }
+
+        private static void CollectExpanded(TreeViewItem folderItem, HashSet<string> result)
+        {
+            foreach (var child in folderItem.Items.OfType<TreeViewItem>())
+            {
+                if (child.IsExpanded && child.Tag is FileNode { IsDirectory: true } node)
+                {
+                    result.Add(node.FullPath);
+                    CollectExpanded(child, result);
+                }
+            }
         }
 
         // ------------------------------------------------------------------
@@ -258,6 +365,100 @@ namespace IdeCSharp.UI
             if (TargetFolder() is { } folderItem)
                 ReloadFolder(folderItem);
         }
+
+        // ------------------------------------------------------------------
+        // Mise à jour automatique de l'arbre (T32)
+        // ------------------------------------------------------------------
+
+        /// <summary>Surveille le dossier ouvert : un fichier créé, supprimé ou renommé ailleurs apparaît dans l'arbre.</summary>
+        private void StartWatching(string folder)
+        {
+            _watcher?.Dispose();
+            _watcher = null;
+            _pendingDirs.Clear();
+
+            try
+            {
+                var watcher = new FileSystemWatcher(folder)
+                {
+                    IncludeSubdirectories = true,
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName
+                };
+                watcher.Created += OnDiskChanged;
+                watcher.Deleted += OnDiskChanged;
+                watcher.Renamed += (s, e) =>
+                {
+                    OnDiskChanged(s, e);
+                    QueueRefresh(Path.GetDirectoryName(e.OldFullPath)); // l'ancien emplacement aussi
+                };
+                watcher.Error += (_, _) => QueueRefresh(folder); // trop d'événements d'un coup : on relit tout
+                watcher.EnableRaisingEvents = true;
+                _watcher = watcher;
+            }
+            catch (Exception ex) when (ex is ArgumentException or IOException or UnauthorizedAccessException)
+            {
+                // Pas de surveillance possible : l'arbre reste utilisable, avec « Actualiser » à la main.
+                _window.SetStatus($"Mise à jour automatique indisponible : {ex.Message}");
+            }
+        }
+
+        // Ces événements arrivent sur un thread de fond : on ne touche JAMAIS à l'interface ici.
+        private void OnDiskChanged(object sender, FileSystemEventArgs e) =>
+            QueueRefresh(Path.GetDirectoryName(e.FullPath));
+
+        private void QueueRefresh(string? directory)
+        {
+            if (string.IsNullOrEmpty(directory) || IsIgnored(directory)) return;
+
+            // On repasse sur le thread de l'interface, et on relance le minuteur (anti-rebond).
+            _window.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _pendingDirs.Add(directory);
+                _refreshTimer.Stop();
+                _refreshTimer.Start();
+            }));
+        }
+
+        private void OnRefreshTick(object? sender, EventArgs e)
+        {
+            _refreshTimer.Stop();
+
+            // Les dossiers parents d'abord : leur rechargement recrée les enfants.
+            var directories = _pendingDirs.OrderBy(d => d.Length).ToList();
+            _pendingDirs.Clear();
+
+            if (_rootItem is null) return;
+
+            foreach (var directory in directories)
+            {
+                if (!Directory.Exists(directory)) continue; // supprimé entre-temps : son parent est déjà rafraîchi
+
+                var item = FindFolderItem(_rootItem, directory);
+
+                // On ne recharge que les dossiers déjà affichés ; les autres se chargeront à l'ouverture.
+                if (item != null && !(item.Items.Count == 1 && item.Items[0] is string))
+                    ReloadFolder(item, expand: false);
+            }
+        }
+
+        private static TreeViewItem? FindFolderItem(TreeViewItem from, string path)
+        {
+            if (from.Tag is not FileNode node) return null;
+
+            if (string.Equals(node.FullPath.TrimEnd('\\', '/'), path.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase))
+                return from;
+
+            foreach (var child in from.Items.OfType<TreeViewItem>())
+            {
+                if (child.Tag is FileNode { IsDirectory: true } && FindFolderItem(child, path) is { } found)
+                    return found;
+            }
+            return null;
+        }
+
+        private static bool IsIgnored(string path) =>
+            path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                .Any(part => IgnoredFolders.Contains(part, StringComparer.OrdinalIgnoreCase));
 
         // ------------------------------------------------------------------
         // Outils
