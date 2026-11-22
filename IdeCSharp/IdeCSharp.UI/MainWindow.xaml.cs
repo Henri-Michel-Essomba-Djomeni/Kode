@@ -1,3 +1,4 @@
+using IdeCSharp.Core.Services;
 using System;
 using System.Windows;
 using System.Windows.Input;
@@ -18,11 +19,12 @@ namespace IdeCSharp.UI
 
         /// <summary>Aiguille les commandes vers les modules ; chaque module s'y branche.</summary>
         public CommandRouter Router { get; }
-        
+
         public MainWindow()
         {
             InitializeComponent();
             Router = new CommandRouter(this);
+            _ = new FileExplorer(this, new FileService());
         }
 
         // ------------------------------------------------------------------
