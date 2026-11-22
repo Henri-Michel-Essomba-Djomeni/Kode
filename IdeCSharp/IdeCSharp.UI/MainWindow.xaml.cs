@@ -65,6 +65,22 @@ namespace IdeCSharp.UI
 
         public void SetEncoding(string encoding) => EncodingText.Text = encoding;
 
+        public void SetBranch(string? branch)
+        {
+            BranchItem.Visibility = branch is null ? Visibility.Collapsed : Visibility.Visible;
+            BranchText.Text = branch ?? string.Empty;
+        }
+
+        public void SetProblems(int errors, int warnings)
+        {
+            ErrorCountText.Text = errors.ToString();
+            WarningCountText.Text = warnings.ToString();
+        }
+
+        public void SetIndentation(string text) => IndentText.Text = text;
+
+        public void SetLineEnding(string ending) => LineEndingText.Text = ending;       
+
         // ------------------------------------------------------------------
         // Commandes
         // ------------------------------------------------------------------

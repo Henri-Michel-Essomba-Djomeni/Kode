@@ -267,21 +267,61 @@
         </Grid>
 
         <!-- Barre d'état en dégradé -->
+        <!-- Barre d'état en dégradé -->
         <StatusBar Grid.Row="2"
                    Background="{DynamicResource StatusBarBrush}"
                    Foreground="{DynamicResource StatusBarForegroundBrush}">
-            <StatusBarItem>
-                <TextBlock x:Name="StatusMessage" Text="Prêt"
-                           Foreground="{DynamicResource StatusBarForegroundBrush}"/>
+            <!-- Tous les textes de la barre prennent la couleur du thème -->
+            <StatusBar.Resources>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="{DynamicResource StatusBarForegroundBrush}"/>
+                </Style>
+            </StatusBar.Resources>
+
+            <!-- Branche Git : visible seulement si le dossier ouvert est un dépôt -->
+            <StatusBarItem x:Name="BranchItem" Visibility="Collapsed" ToolTip="Branche Git actuelle">
+                <StackPanel Orientation="Horizontal">
+                    <Viewbox Width="14" Height="14" Margin="0,0,6,0">
+                        <Path Data="{StaticResource IconBranch}"
+                              Stroke="{DynamicResource StatusBarForegroundBrush}" StrokeThickness="2"
+                              StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Width="24" Height="24" Stretch="None"/>
+                    </Viewbox>
+                    <TextBlock x:Name="BranchText"/>
+                </StackPanel>
             </StatusBarItem>
+        
+            <!-- Compteurs d'erreurs et d'avertissements -->
+            <StatusBarItem ToolTip="Erreurs et avertissements">
+                <StackPanel Orientation="Horizontal">
+                    <Viewbox Width="14" Height="14" Margin="0,0,5,0">
+                        <Path Data="{StaticResource IconError}"
+                              Stroke="{DynamicResource StatusBarForegroundBrush}" StrokeThickness="2"
+                              StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Width="24" Height="24" Stretch="None"/>
+                    </Viewbox>
+                    <TextBlock x:Name="ErrorCountText" Text="0" Margin="0,0,12,0"/>
+                    <Viewbox Width="14" Height="14" Margin="0,0,5,0">
+                        <Path Data="{StaticResource IconWarning}"
+                              Stroke="{DynamicResource StatusBarForegroundBrush}" StrokeThickness="2"
+                              StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Width="24" Height="24" Stretch="None"/>
+                    </Viewbox>
+                    <TextBlock x:Name="WarningCountText" Text="0"/>
+                </StackPanel>
+            </StatusBarItem>
+
+            <StatusBarItem>
+                <TextBlock x:Name="StatusMessage" Text="Prêt"/>
+            </StatusBarItem>
+
             <StatusBarItem HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock x:Name="CursorText" Text="Ln 1, Col 1" Margin="0,0,16,0"
-                               Foreground="{DynamicResource StatusBarForegroundBrush}"/>
-                    <TextBlock x:Name="LanguageText" Text="Texte brut" Margin="0,0,16,0"
-                               Foreground="{DynamicResource StatusBarForegroundBrush}"/>
-                    <TextBlock x:Name="EncodingText" Text="UTF-8"
-                               Foreground="{DynamicResource StatusBarForegroundBrush}"/>
+                    <TextBlock x:Name="CursorText" Text="Ln 1, Col 1" Margin="0,0,16,0"/>
+                    <TextBlock x:Name="IndentText" Text="Espaces : 4" Margin="0,0,16,0"/>
+                    <TextBlock x:Name="EncodingText" Text="UTF-8" Margin="0,0,16,0"/>
+                    <TextBlock x:Name="LineEndingText" Text="CRLF" Margin="0,0,16,0"/>
+                    <TextBlock x:Name="LanguageText" Text="Texte brut"/>
                 </StackPanel>
             </StatusBarItem>
         </StatusBar>
