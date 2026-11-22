@@ -85,6 +85,9 @@ public partial class DocumentView : UserControl
         // Fermeture automatique des paires (désactivée en mode gros fichier ou lecture seule)
         AutoPairs.Attach(CodeEditor, () => CodeEditor.SyntaxHighlighting != null && !CodeEditor.IsReadOnly && !IsLargeFileMode);
 
+        // T25 : Autocomplétion basique
+        AutoComplete.Attach(CodeEditor, () => CodeEditor.SyntaxHighlighting?.Name, () => CodeEditor.SyntaxHighlighting != null && !CodeEditor.IsReadOnly && !IsLargeFileMode);
+
         // Suivi de la modification du texte par l'utilisateur
         CodeEditor.TextChanged += OnTextChanged;
 
