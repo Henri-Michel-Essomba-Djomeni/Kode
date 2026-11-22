@@ -1,0 +1,108 @@
+<UserControl x:Class="IdeCSharp.UI.Editor.FindReplaceBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource PanelBackgroundBrush}"
+             BorderBrush="{DynamicResource SplitterBrush}"
+             BorderThickness="0,0,0,1"
+             Padding="8,5">
+    <StackPanel>
+        <!-- Première ligne : recherche, options et navigation -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox x:Name="SearchBox"
+                     Grid.Column="0"
+                     Width="220"
+                     Height="24"
+                     VerticalContentAlignment="Center"
+                     Background="{DynamicResource PanelBackgroundBrush}"
+                     Foreground="{DynamicResource PanelForegroundBrush}"
+                     BorderBrush="{DynamicResource SplitterBrush}"
+                     Padding="4,1"
+                     Margin="0,0,6,0"/>
+
+            <ToggleButton x:Name="MatchCaseButton"
+                          Grid.Column="1"
+                          Content="Aa"
+                          ToolTip="Respecter la casse"
+                          Width="28"
+                          Height="24"
+                          Padding="2,0"
+                          Margin="0,0,8,0"
+                          VerticalAlignment="Center"/>
+
+            <TextBlock x:Name="ResultLabel"
+                       Grid.Column="2"
+                       Foreground="{DynamicResource MutedForegroundBrush}"
+                       VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis"
+                       Margin="0,0,8,0"/>
+
+            <Button x:Name="PreviousButton"
+                    Grid.Column="3"
+                    Content="▲"
+                    ToolTip="Précédent (Maj+Entrée)"
+                    Width="24"
+                    Height="24"
+                    Margin="0,0,3,0"
+                    VerticalAlignment="Center"/>
+
+            <Button x:Name="NextButton"
+                    Grid.Column="4"
+                    Content="▼"
+                    ToolTip="Suivant (Entrée)"
+                    Width="24"
+                    Height="24"
+                    Margin="0,0,8,0"
+                    VerticalAlignment="Center"/>
+
+            <Button x:Name="CloseButton"
+                    Grid.Column="5"
+                    Content="✕"
+                    ToolTip="Fermer (Échap)"
+                    Width="24"
+                    Height="24"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Foreground="{DynamicResource MutedForegroundBrush}"
+                    Cursor="Hand"
+                    VerticalAlignment="Center"/>
+        </Grid>
+
+        <!-- Deuxième ligne : remplacement (visible uniquement en mode remplacement) -->
+        <StackPanel x:Name="ReplaceRow"
+                    Orientation="Horizontal"
+                    Margin="0,6,0,0"
+                    Visibility="Collapsed">
+            <TextBox x:Name="ReplaceBox"
+                     Width="220"
+                     Height="24"
+                     VerticalContentAlignment="Center"
+                     Background="{DynamicResource PanelBackgroundBrush}"
+                     Foreground="{DynamicResource PanelForegroundBrush}"
+                     BorderBrush="{DynamicResource SplitterBrush}"
+                     Padding="4,1"
+                     Margin="0,0,6,0"/>
+
+            <Button x:Name="ReplaceButton"
+                    Content="Remplacer"
+                    Height="24"
+                    Padding="8,1"
+                    Margin="0,0,6,0"
+                    VerticalAlignment="Center"/>
+
+            <Button x:Name="ReplaceAllButton"
+                    Content="Tout remplacer"
+                    Height="24"
+                    Padding="8,1"
+                    VerticalAlignment="Center"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>
