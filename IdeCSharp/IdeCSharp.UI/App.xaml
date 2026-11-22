@@ -8,6 +8,8 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/Light.xaml"/>
                 <ResourceDictionary Source="Assets/KodeIcon.xaml"/>
+                <ResourceDictionary Source="Assets/Icons.xaml"/>
+                <ResourceDictionary Source="Assets/Styles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

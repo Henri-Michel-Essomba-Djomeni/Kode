@@ -1,0 +1,65 @@
+<UserControl x:Class="IdeCSharp.UI.ExtensionsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="EXTENSIONS"
+                   FontSize="11" FontWeight="SemiBold" Margin="14,12,10,8"
+                   Foreground="{DynamicResource MutedForegroundBrush}"/>
+
+        <TextBox x:Name="SearchBox" DockPanel.Dock="Top" Margin="10,0,10,4" Padding="8,6"
+                 ToolTip="Rechercher une extension" TextChanged="OnSearchChanged"/>
+
+        <!-- Dit d'où vient le catalogue : en ligne ou intégré -->
+        <TextBlock x:Name="SourceText" DockPanel.Dock="Top" Margin="12,0,10,8"
+                   FontSize="11" TextWrapping="Wrap"
+                   Foreground="{DynamicResource MutedForegroundBrush}"/>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <ItemsControl x:Name="ExtensionList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <!-- Une carte par extension -->
+                            <Border Margin="10,0,10,10" Padding="12" CornerRadius="8"
+                                    Background="{DynamicResource WindowBackgroundBrush}"
+                                    BorderBrush="{DynamicResource SplitterBrush}" BorderThickness="1">
+                                <StackPanel>
+                                    <!-- Aperçu : trois pastilles qui se chevauchent -->
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="20" Height="20" CornerRadius="10" Margin="0,0,-6,0"
+                                                Background="{Binding PreviewBackground}"
+                                                BorderBrush="{DynamicResource SplitterBrush}" BorderThickness="1"/>
+                                        <Border Width="20" Height="20" CornerRadius="10" Margin="0,0,-6,0"
+                                                Background="{Binding PreviewPanel}"
+                                                BorderBrush="{DynamicResource SplitterBrush}" BorderThickness="1"/>
+                                        <Border Width="20" Height="20" CornerRadius="10"
+                                                Background="{Binding PreviewAccent}"
+                                                BorderBrush="{DynamicResource SplitterBrush}" BorderThickness="1"/>
+                                    </StackPanel>
+
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,10,0,0"
+                                               Foreground="{DynamicResource PanelForegroundBrush}"/>
+                                    <TextBlock Text="{Binding Subtitle}" FontSize="11"
+                                               Foreground="{DynamicResource MutedForegroundBrush}"/>
+                                    <TextBlock Text="{Binding Description}" TextWrapping="Wrap" Margin="0,6,0,10"
+                                               Foreground="{DynamicResource MutedForegroundBrush}"/>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="{Binding PrimaryLabel}" IsEnabled="{Binding CanApply}"
+                                                Padding="12,5" Click="OnPrimaryClick"/>
+                                        <Button Content="Désinstaller" Margin="8,0,0,0" Padding="12,5"
+                                                Visibility="{Binding UninstallVisibility}" Click="OnUninstallClick"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock x:Name="EmptyText" Text="Aucune extension trouvée." Margin="12"
+                           Visibility="Collapsed"
+                           Foreground="{DynamicResource MutedForegroundBrush}"/>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>
