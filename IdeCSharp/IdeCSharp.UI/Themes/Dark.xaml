@@ -18,4 +18,13 @@
         <GradientStop Color="#7A3FF2" Offset="1"/>
     </LinearGradientBrush>
     <SolidColorBrush x:Key="StatusBarForegroundBrush" Color="#FFFFFF"/>
+
+    <!-- Couleurs du code (lues par l'éditeur) -->
+    <SolidColorBrush x:Key="SyntaxKeywordBrush" Color="#C792EA"/>
+    <SolidColorBrush x:Key="SyntaxTypeBrush" Color="#5CCFE6"/>
+    <SolidColorBrush x:Key="SyntaxMethodBrush" Color="#82AAFF"/>
+    <SolidColorBrush x:Key="SyntaxStringBrush" Color="#98C379"/>
+    <SolidColorBrush x:Key="SyntaxNumberBrush" Color="#F78C6C"/>
+    <SolidColorBrush x:Key="SyntaxCommentBrush" Color="#6A6F8F"/>
+
 </ResourceDictionary>

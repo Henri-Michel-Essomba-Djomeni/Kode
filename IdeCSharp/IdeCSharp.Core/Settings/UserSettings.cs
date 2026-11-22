@@ -11,6 +11,11 @@ public class UserSettings
     /// <summary>Extension de thème appliquée, s'il y en a une.</summary>
     public string? ActiveExtensionId { get; set; }
 
+    public string UiFontFamily { get; set; } = "Segoe UI";
+    public double UiFontSize { get; set; } = 13;
+    public string EditorFontFamily { get; set; } = "Consolas";
+    public double EditorFontSize { get; set; } = 14;
+
     public static string Folder =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Kode");
 
