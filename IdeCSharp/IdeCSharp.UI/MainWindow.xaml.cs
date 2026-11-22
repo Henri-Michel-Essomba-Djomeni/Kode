@@ -27,6 +27,7 @@ namespace IdeCSharp.UI
         {
             InitializeComponent();
             Router = new CommandRouter(this);
+            _ = new FileExplorer(this, new FileService());
 
             // On place les onglets SORTIE / TERMINAL dans le panneau du bas
             SetBottomPanelContent(_bottomTabs);
