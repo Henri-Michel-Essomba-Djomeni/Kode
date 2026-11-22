@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Input;
 using IdeCSharp.Core.Interfaces;
 using Microsoft.Win32;
+using IdeCSharp.Core.Git;
 
 namespace IdeCSharp.UI
 {
@@ -133,6 +134,7 @@ namespace IdeCSharp.UI
 
             CurrentFolder = dialog.FolderName;
             FolderOpened?.Invoke(CurrentFolder);
+            _window.SetBranch(GitInfo.GetBranch(CurrentFolder));
             _window.SetStatus($"Dossier ouvert : {CurrentFolder}");
         }
 

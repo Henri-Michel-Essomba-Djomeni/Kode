@@ -1,0 +1,121 @@
+{
+  "extensions": [
+    {
+      "id": "minuit-tropical",
+      "name": "Minuit Tropical",
+      "author": "Kode",
+      "version": "1.0.0",
+      "description": "Un sombre profond aux accents turquoise, doux pour les longues sessions.",
+      "dark": true,
+      "colors": {
+        "WindowBackgroundBrush": "#0F1B20",
+        "PanelBackgroundBrush": "#14252B",
+        "PanelForegroundBrush": "#E3F4F1",
+        "MutedForegroundBrush": "#7FA3A6",
+        "SplitterBrush": "#1F3940",
+        "ActivityBarBackgroundBrush": "#0B1418",
+        "ActivityBarForegroundBrush": "#5E8A8F",
+        "ActivityBarActiveForegroundBrush": "#FFFFFF",
+        "HoverBrush": "#1B3239",
+        "AccentBrush": "#2DD4BF",
+        "StatusBarBrush": "#0F766E,#14B8A6",
+        "StatusBarForegroundBrush": "#FFFFFF"
+      }
+    },
+    {
+      "id": "braise",
+      "name": "Braise",
+      "author": "Kode",
+      "version": "1.0.0",
+      "description": "Un sombre chaud, brun et orangé, comme des braises qui couvent.",
+      "dark": true,
+      "colors": {
+        "WindowBackgroundBrush": "#1C1412",
+        "PanelBackgroundBrush": "#251B18",
+        "PanelForegroundBrush": "#F5E9E2",
+        "MutedForegroundBrush": "#A98F83",
+        "SplitterBrush": "#3A2A26",
+        "ActivityBarBackgroundBrush": "#140E0D",
+        "ActivityBarForegroundBrush": "#8F7266",
+        "ActivityBarActiveForegroundBrush": "#FFFFFF",
+        "HoverBrush": "#33241F",
+        "AccentBrush": "#FF8A4C",
+        "StatusBarBrush": "#E5484D,#FF8A4C",
+        "StatusBarForegroundBrush": "#FFFFFF"
+      }
+    },
+    {
+      "id": "neon-nuit",
+      "name": "Néon Nuit",
+      "author": "Kode",
+      "version": "1.0.0",
+      "description": "Violet électrique et rose néon pour un look de ville la nuit.",
+      "dark": true,
+      "colors": {
+        "WindowBackgroundBrush": "#120B1F",
+        "PanelBackgroundBrush": "#1A1030",
+        "PanelForegroundBrush": "#F1E8FF",
+        "MutedForegroundBrush": "#9A87BD",
+        "SplitterBrush": "#2C1B4D",
+        "ActivityBarBackgroundBrush": "#0C0617",
+        "ActivityBarForegroundBrush": "#7D68A8",
+        "ActivityBarActiveForegroundBrush": "#FFFFFF",
+        "HoverBrush": "#2A1850",
+        "AccentBrush": "#FF4FD8",
+        "StatusBarBrush": "#FF4FD8,#7A3FF2",
+        "StatusBarForegroundBrush": "#FFFFFF"
+      }
+    },
+    {
+      "id": "papier",
+      "name": "Papier",
+      "author": "Kode",
+      "version": "1.0.0",
+      "description": "Un clair crème et ambré, confortable comme une page imprimée.",
+      "dark": false,
+      "colors": {
+        "WindowBackgroundBrush": "#FFFDF8",
+        "PanelBackgroundBrush": "#F6F1E7",
+        "PanelForegroundBrush": "#2B2620",
+        "MutedForegroundBrush": "#7A6F60",
+        "SplitterBrush": "#E4DCCB",
+        "ActivityBarBackgroundBrush": "#EDE5D3",
+        "ActivityBarForegroundBrush": "#7A6F60",
+        "ActivityBarActiveForegroundBrush": "#2B2620",
+        "HoverBrush": "#E0D6BF",
+        "AccentBrush": "#B45309",
+        "StatusBarBrush": "#B45309,#D97706",
+        "StatusBarForegroundBrush": "#FFFFFF"
+      }
+    },
+    {
+      "id": "ocean",
+      "name": "Océan",
+      "author": "Kode",
+      "version": "1.0.0",
+      "description": "Un clair bleuté, frais et net, pour travailler en plein jour.",
+      "dark": false,
+      "colors": {
+        "WindowBackgroundBrush": "#F7FBFF",
+        "PanelBackgroundBrush": "#EAF3FC",
+        "PanelForegroundBrush": "#10263B",
+        "MutedForegroundBrush": "#5E7A94",
+        "SplitterBrush": "#CFE0F0",
+        "ActivityBarBackgroundBrush": "#DCEAF7",
+        "ActivityBarForegroundBrush": "#4F6E8A",
+        "ActivityBarActiveForegroundBrush": "#10263B",
+        "HoverBrush": "#C9DDF0",
+        "AccentBrush": "#0A84FF",
+        "StatusBarBrush": "#0A84FF,#5AC8FA",
+        "StatusBarForegroundBrush": "#FFFFFF",
+        "StatusBarForegroundBrush": "#FFFFFF",
+        "SyntaxKeywordBrush": "#5EEAD4",
+        "SyntaxTypeBrush": "#7DD3FC",
+        "SyntaxMethodBrush": "#A5B4FC",
+        "SyntaxStringBrush": "#FDE68A",
+        "SyntaxNumberBrush": "#FDBA74",
+        "SyntaxCommentBrush": "#5E8A8F"
+      }
+    }
+  ]
+}

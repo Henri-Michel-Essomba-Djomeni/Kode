@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Input;
+using IdeCSharp.Core.Services;
 
 namespace IdeCSharp.UI
 {
@@ -9,6 +10,8 @@ namespace IdeCSharp.UI
         // Tailles mémorisées pour retrouver la mise en page après un masquage
         private double _explorerWidth = 260;
         private double _bottomPanelHeight = 200;
+        private readonly TerminalService _terminal = new();
+        private readonly BottomPanelView _bottomTabs = new();
 
         /// <summary>
         /// Levé pour chaque commande non gérée par la fenêtre elle-même
@@ -18,11 +21,26 @@ namespace IdeCSharp.UI
 
         /// <summary>Aiguille les commandes vers les modules ; chaque module s'y branche.</summary>
         public CommandRouter Router { get; }
-        
+
+
         public MainWindow()
         {
             InitializeComponent();
             Router = new CommandRouter(this);
+
+            // On place les onglets SORTIE / TERMINAL dans le panneau du bas
+            SetBottomPanelContent(_bottomTabs);
+
+            // La console démarre dans le dossier du projet ouvert (Ctrl+Maj+O),
+            // ou dans le dossier utilisateur si aucun dossier n'est ouvert.
+            _bottomTabs.TerminalPane.Attach(_terminal, () => Router.CurrentFolder);
+
+            // On ferme proprement la console quand la fenêtre se ferme
+            Closed += (_, _) => _terminal.Dispose();
+            InitExecutionModule();
+            // Barre de titre sombre ou claire selon le thème
+            SourceInitialized += (_, _) => WindowStyler.SetDarkTitleBar(this, ThemeManager.IsDark);
+            ThemeManager.ThemeChanged += dark => WindowStyler.SetDarkTitleBar(this, dark);
         }
 
         // ------------------------------------------------------------------
@@ -47,12 +65,41 @@ namespace IdeCSharp.UI
 
         public void SetEncoding(string encoding) => EncodingText.Text = encoding;
 
+        public void SetBranch(string? branch)
+        {
+            BranchItem.Visibility = branch is null ? Visibility.Collapsed : Visibility.Visible;
+            BranchText.Text = branch ?? string.Empty;
+        }
+
+        public void SetProblems(int errors, int warnings)
+        {
+            ErrorCountText.Text = errors.ToString();
+            WarningCountText.Text = warnings.ToString();
+        }
+
+        public void SetIndentation(string text) => IndentText.Text = text;
+
+        public void SetLineEnding(string ending) => LineEndingText.Text = ending;       
+
         // ------------------------------------------------------------------
         // Commandes
         // ------------------------------------------------------------------
 
         private void OnCommandExecuted(object sender, ExecutedRoutedEventArgs e)
         {
+
+            if (e.Command == AppCommands.ShowExtensions)
+            {
+                ShowSidebarView(SidebarView.Extensions);
+                return;
+            }
+
+            if (e.Command == AppCommands.ShowSettings)
+            {
+                ShowSidebarView(SidebarView.Settings);
+                return;
+            }
+
             // Les commandes d'affichage et de fenêtre sont gérées ici
             if (e.Command == AppCommands.ToggleExplorer)
             {
@@ -99,14 +146,71 @@ namespace IdeCSharp.UI
             CommandInvoked.Invoke(e.Command);
         }
 
+        // Bouton en bas de la barre d'activité : passe de clair à sombre et inversement
+        private void OnThemeButtonClick(object sender, RoutedEventArgs e)
+        {
+            ThemeManager.Apply(ThemeManager.IsDark ? AppTheme.Light : AppTheme.Dark);
+            SetStatus(ThemeManager.IsDark ? "Thème sombre" : "Thème clair");
+        }
+
         // ------------------------------------------------------------------
         // Affichage des panneaux
         // ------------------------------------------------------------------
 
+        private enum SidebarView
+        {
+            Explorer,
+            Extensions,
+            Settings
+        }
+
+        private SidebarView _currentView = SidebarView.Explorer;
+
+        private void OnExplorerButtonClick(object sender, RoutedEventArgs e) => ShowSidebarView(SidebarView.Explorer);
+
+        private void OnExtensionsButtonClick(object sender, RoutedEventArgs e) => ShowSidebarView(SidebarView.Extensions);
+
+        private void OnSettingsButtonClick(object sender, RoutedEventArgs e) => ShowSidebarView(SidebarView.Settings);
+
+        //private void OnSettingsButtonClick(object sender, RoutedEventArgs e) => ShowSidebarView(SidebarView.Settings);
+
+        private void ShowSidebarView(SidebarView view)
+        {
+            bool panelVisible = ExplorerPanel.Visibility == Visibility.Visible;
+
+            if (panelVisible && _currentView == view)
+            {
+                ToggleExplorer();
+                return;
+            }
+
+            _currentView = view;
+            ExplorerView.Visibility = view == SidebarView.Explorer ? Visibility.Visible : Visibility.Collapsed;
+            ExtensionsPanelView.Visibility = view == SidebarView.Extensions ? Visibility.Visible : Visibility.Collapsed;
+            SettingsPanelView.Visibility = view == SidebarView.Settings ? Visibility.Visible : Visibility.Collapsed;
+
+            if (!panelVisible)
+            {
+                ToggleExplorer();
+            }
+            else
+            {
+                UpdateIndicators();
+            }
+        }
+
+        private void UpdateIndicators()
+        {
+            bool visible = ExplorerPanel.Visibility == Visibility.Visible;
+            ExplorerIndicator.Visibility = visible && _currentView == SidebarView.Explorer ? Visibility.Visible : Visibility.Hidden;
+            ExtensionsIndicator.Visibility = visible && _currentView == SidebarView.Extensions ? Visibility.Visible : Visibility.Hidden;
+            SettingsIndicator.Visibility = visible && _currentView == SidebarView.Settings ? Visibility.Visible : Visibility.Hidden;
+        }
+
         private void ToggleExplorer()
         {
             bool isVisible = ExplorerPanel.Visibility == Visibility.Visible;
-
+        
             if (isVisible)
             {
                 // On retient la largeur actuelle avant de replier la colonne
@@ -123,6 +227,8 @@ namespace IdeCSharp.UI
                 ExplorerColumn.MinWidth = 150;
                 ExplorerColumn.Width = new GridLength(_explorerWidth);
             }
+        
+            UpdateIndicators();
         }
 
         private void ToggleBottomPanel()
