@@ -1,0 +1,22 @@
+<UserControl x:Class="IdeCSharp.UI.BottomPanelView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:IdeCSharp.UI"
+             xmlns:term="clr-namespace:IdeCSharp.UI.Terminal">
+
+    <!-- Les modules du panneau du bas : Sortie (Exécution), Terminal et Ports -->
+    <TabControl x:Name="Tabs" Style="{StaticResource PanelTabControlStyle}" SelectionChanged="OnTabChanged">
+        <TabItem Header="SORTIE">
+            <ContentControl x:Name="OutputHost">
+                <TextBlock Text="La sortie des programmes s'affichera ici."
+                           Margin="10" Foreground="{DynamicResource MutedForegroundBrush}"/>
+            </ContentControl>
+        </TabItem>
+        <TabItem x:Name="TerminalTab" Header="TERMINAL">
+            <term:TerminalView x:Name="TerminalPane" x:FieldModifier="public"/>
+        </TabItem>
+        <TabItem x:Name="PortsTab" Header="PORTS">
+            <local:PortsView/>
+        </TabItem>
+    </TabControl>
+</UserControl>

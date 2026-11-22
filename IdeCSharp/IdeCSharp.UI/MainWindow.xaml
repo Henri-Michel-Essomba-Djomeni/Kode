@@ -3,10 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:IdeCSharp.UI"
         Title="Kode"
+        FontFamily="{DynamicResource UiFontFamily}"
+        FontSize="{DynamicResource UiFontSize}"
         Icon="{StaticResource KodeIconImage}"
         Width="1200" Height="760"
         MinWidth="800" MinHeight="480"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource WindowBackgroundBrush}">
 
     <!-- Branchement des commandes : tout passe par OnCommandExecuted -->
     <Window.CommandBindings>
@@ -25,6 +28,8 @@
         <CommandBinding Command="{x:Static local:AppCommands.SetTheme}" Executed="OnCommandExecuted"/>
         <CommandBinding Command="{x:Static local:AppCommands.About}" Executed="OnCommandExecuted"/>
         <CommandBinding Command="{x:Static local:AppCommands.Exit}" Executed="OnCommandExecuted"/>
+        <CommandBinding Command="{x:Static local:AppCommands.ShowExtensions}" Executed="OnCommandExecuted"/>
+        <CommandBinding Command="{x:Static local:AppCommands.ShowSettings}" Executed="OnCommandExecuted"/>
     </Window.CommandBindings>
 
     <Grid>
@@ -61,6 +66,8 @@
             <MenuItem Header="_Affichage">
                 <MenuItem Command="{x:Static local:AppCommands.ToggleExplorer}"/>
                 <MenuItem Command="{x:Static local:AppCommands.ToggleBottomPanel}"/>
+                <MenuItem Command="{x:Static local:AppCommands.ShowExtensions}"/>
+                <MenuItem Command="{x:Static local:AppCommands.ShowSettings}"/>
                 <Separator/>
                 <MenuItem Header="_Thème">
                     <MenuItem Header="_Clair" Command="{x:Static local:AppCommands.SetTheme}" CommandParameter="Light"/>
@@ -77,49 +84,171 @@
             </MenuItem>
         </Menu>
 
-        <!-- Zone de travail : explorateur | éditeur + panneau du bas -->
+        <!-- Zone de travail : barre d'activité | explorateur | éditeur + panneau du bas -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition x:Name="ExplorerColumn" Width="260" MinWidth="150"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*" MinWidth="300"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Explorateur (module Fichiers) -->
-            <Border x:Name="ExplorerPanel" Grid.Column="0"
-                    Background="{DynamicResource PanelBackgroundBrush}">
-                <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="EXPLORATEUR"
-                               FontSize="11" FontWeight="SemiBold" Margin="10,8,10,6"
-                               Foreground="{DynamicResource PanelForegroundBrush}"/>
-                    <ContentControl x:Name="ExplorerHost">
-                        <TextBlock Text="L'explorateur de fichiers s'affichera ici."
-                                   Margin="10" TextWrapping="Wrap" Foreground="{DynamicResource MutedForegroundBrush}"/>
-                    </ContentControl>
+            <!-- Barre d'activité : boutons à icônes -->
+            <Border Grid.Column="0" Background="{DynamicResource ActivityBarBackgroundBrush}">
+                <DockPanel LastChildFill="False">
+                    <StackPanel DockPanel.Dock="Top">
+                        <Grid>
+                            <Rectangle x:Name="ExplorerIndicator" Width="2" HorizontalAlignment="Left"
+                                       Fill="{DynamicResource AccentBrush}"/>
+                            <Button Style="{StaticResource ActivityButtonStyle}"
+                                    Tag="{StaticResource IconExplorer}"
+                                    ToolTip="Explorateur (Ctrl+B)"
+                                    Click="OnExplorerButtonClick"/>
+                        </Grid>
+                        <Button Style="{StaticResource ActivityButtonStyle}"
+                                Command="ApplicationCommands.Find"
+                                Tag="{StaticResource IconSearch}"
+                                ToolTip="Rechercher (Ctrl+F)"/>
+                        <Grid>
+                            <Rectangle x:Name="ExtensionsIndicator" Width="2" HorizontalAlignment="Left"
+                                       Fill="{DynamicResource AccentBrush}" Visibility="Hidden"/>
+                            <Button Style="{StaticResource ActivityButtonStyle}"
+                                    Tag="{StaticResource IconExtensions}"
+                                    ToolTip="Extensions (Ctrl+Maj+X)"
+                                    Click="OnExtensionsButtonClick"/>
+                        </Grid>
+                        <Button Style="{StaticResource ActivityButtonStyle}"
+                                Command="{x:Static local:AppCommands.Run}"
+                                Tag="{StaticResource IconRun}"
+                                ToolTip="Exécuter (F5)"/>
+                        <Button Style="{StaticResource ActivityButtonStyle}"
+                                Command="{x:Static local:AppCommands.ToggleBottomPanel}"
+                                Tag="{StaticResource IconPanel}"
+                                ToolTip="Panneau du bas (Ctrl+J)"/>
+                    </StackPanel>
+
+                    <!-- En bas : bascule clair / sombre -->
+                    <Button DockPanel.Dock="Bottom"
+                            Style="{StaticResource ActivityButtonStyle}"
+                            Tag="{StaticResource IconTheme}"
+                            ToolTip="Basculer thème clair / sombre"
+                            Click="OnThemeButtonClick"/>
+
+                    <Grid DockPanel.Dock="Bottom">
+                        <Rectangle x:Name="SettingsIndicator" Width="2" HorizontalAlignment="Left"
+                                   Fill="{DynamicResource AccentBrush}" Visibility="Hidden"/>
+                        <Button Style="{StaticResource ActivityButtonStyle}"
+                                Tag="{StaticResource IconSettings}"
+                                ToolTip="Paramètres (Ctrl+,)"
+                                Click="OnSettingsButtonClick"/>
+                    </Grid>
                 </DockPanel>
             </Border>
 
-            <GridSplitter x:Name="ExplorerSplitter" Grid.Column="1"
-                          Width="5" HorizontalAlignment="Stretch"
+            <!-- Explorateur (module Fichiers) -->
+            <Border x:Name="ExplorerPanel" Grid.Column="1"
+                    Background="{DynamicResource PanelBackgroundBrush}">
+                <Grid>
+                    <DockPanel x:Name="ExplorerView">
+                        <TextBlock DockPanel.Dock="Top" Text="EXPLORATEUR"
+                                   FontSize="11" FontWeight="SemiBold" Margin="14,12,10,8"
+                                   Foreground="{DynamicResource MutedForegroundBrush}"/>
+
+                        <!-- État vide, remplacé par l'arborescence du module Fichiers -->
+                        <ContentControl x:Name="ExplorerHost">
+                            <StackPanel Margin="16,28,16,0" HorizontalAlignment="Center">
+                                <Viewbox Width="48" Height="48" HorizontalAlignment="Center">
+                                    <Path Data="{StaticResource IconExplorer}"
+                                          Stroke="{DynamicResource MutedForegroundBrush}"
+                                          StrokeThickness="1" StrokeLineJoin="Round"
+                                          Width="24" Height="24" Stretch="None"/>
+                                </Viewbox>
+                                <TextBlock Text="Aucun dossier ouvert" Margin="0,12,0,12"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource PanelForegroundBrush}"/>
+                                <Button Content="Ouvrir un dossier" Padding="14,6"
+                                        Command="{x:Static local:AppCommands.OpenFolder}"/>
+                                <TextBlock Text="Ctrl+Maj+O" FontSize="11" Margin="0,8,0,0"
+                                           HorizontalAlignment="Center"
+                                           Foreground="{DynamicResource MutedForegroundBrush}"/>
+                            </StackPanel>
+                        </ContentControl>
+                    </DockPanel>
+                    <local:ExtensionsView x:Name="ExtensionsPanelView" Visibility="Collapsed"/>
+                    <local:SettingsView x:Name="SettingsPanelView" Visibility="Collapsed"/>
+                </Grid>
+            </Border>
+
+            <GridSplitter x:Name="ExplorerSplitter" Grid.Column="2"
+                          Width="4" HorizontalAlignment="Stretch"
                           ResizeBehavior="PreviousAndNext"
                           Background="{DynamicResource SplitterBrush}"/>
 
             <!-- Éditeur + panneau du bas -->
-            <Grid Grid.Column="2">
+            <Grid Grid.Column="3">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" MinHeight="150"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition x:Name="BottomPanelRow" Height="200" MinHeight="80"/>
                 </Grid.RowDefinitions>
 
-                <!-- Éditeur (module Éditeur) -->
+                <!-- Éditeur (module Éditeur) : écran d'accueil tant qu'aucun fichier n'est ouvert -->
                 <ContentControl x:Name="EditorHost" Grid.Row="0">
-                    <TextBlock Text="L'éditeur s'affichera ici."
-                               Margin="20" Foreground="{DynamicResource MutedForegroundBrush}"/>
+                    <Viewbox StretchDirection="DownOnly" Margin="24">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Image Source="{StaticResource KodeIconImage}" Width="96" Height="96"/>
+                        <TextBlock Text="Kode" FontSize="34" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" Margin="0,12,0,0"
+                                   Foreground="{DynamicResource PanelForegroundBrush}"/>
+                        <TextBlock Text="Un IDE simple, fluide et intuitif"
+                                   HorizontalAlignment="Center" Margin="0,4,0,28"
+                                   Foreground="{DynamicResource MutedForegroundBrush}"/>
+
+                        <!-- Raccourcis : libellé à gauche, touche à droite -->
+                        <Grid HorizontalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Ouvrir un dossier" Margin="0,0,28,10"
+                                       Foreground="{DynamicResource MutedForegroundBrush}"/>
+                            <Border Grid.Row="0" Grid.Column="1" Margin="0,0,0,10" Padding="8,2"
+                                    CornerRadius="4" HorizontalAlignment="Left"
+                                    Background="{DynamicResource HoverBrush}">
+                                <TextBlock Text="Ctrl+Maj+O" FontSize="12"
+                                           Foreground="{DynamicResource PanelForegroundBrush}"/>
+                            </Border>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Nouveau fichier" Margin="0,0,28,10"
+                                       Foreground="{DynamicResource MutedForegroundBrush}"/>
+                            <Border Grid.Row="1" Grid.Column="1" Margin="0,0,0,10" Padding="8,2"
+                                    CornerRadius="4" HorizontalAlignment="Left"
+                                    Background="{DynamicResource HoverBrush}">
+                                <TextBlock Text="Ctrl+N" FontSize="12"
+                                           Foreground="{DynamicResource PanelForegroundBrush}"/>
+                            </Border>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Exécuter" Margin="0,0,28,0"
+                                       Foreground="{DynamicResource MutedForegroundBrush}"/>
+                            <Border Grid.Row="2" Grid.Column="1" Padding="8,2"
+                                    CornerRadius="4" HorizontalAlignment="Left"
+                                    Background="{DynamicResource HoverBrush}">
+                                <TextBlock Text="F5" FontSize="12"
+                                           Foreground="{DynamicResource PanelForegroundBrush}"/>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                    </Viewbox>
                 </ContentControl>
 
                 <GridSplitter x:Name="BottomSplitter" Grid.Row="1"
-                              Height="5" HorizontalAlignment="Stretch"
+                              Height="4" HorizontalAlignment="Stretch"
                               ResizeBehavior="PreviousAndNext"
                               Background="{DynamicResource SplitterBrush}"/>
 
@@ -127,28 +256,72 @@
                 <Border x:Name="BottomPanel" Grid.Row="2"
                         Background="{DynamicResource PanelBackgroundBrush}">
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Top" Text="SORTIE"
-                                   FontSize="11" FontWeight="SemiBold" Margin="10,6,10,4"
-                                   Foreground="{DynamicResource PanelForegroundBrush}"/>
                         <ContentControl x:Name="BottomHost">
                             <TextBlock Text="La sortie des programmes s'affichera ici."
-                                       Margin="10" Foreground="{DynamicResource MutedForegroundBrush}"/>
+                                       Margin="12,10,10,10"
+                                       Foreground="{DynamicResource MutedForegroundBrush}"/>
                         </ContentControl>
                     </DockPanel>
                 </Border>
             </Grid>
         </Grid>
 
-        <!-- Barre d'état -->
-        <StatusBar Grid.Row="2">
+        <!-- Barre d'état en dégradé -->
+        <!-- Barre d'état en dégradé -->
+        <StatusBar Grid.Row="2"
+                   Background="{DynamicResource StatusBarBrush}"
+                   Foreground="{DynamicResource StatusBarForegroundBrush}">
+            <!-- Tous les textes de la barre prennent la couleur du thème -->
+            <StatusBar.Resources>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="{DynamicResource StatusBarForegroundBrush}"/>
+                </Style>
+            </StatusBar.Resources>
+
+            <!-- Branche Git : visible seulement si le dossier ouvert est un dépôt -->
+            <StatusBarItem x:Name="BranchItem" Visibility="Collapsed" ToolTip="Branche Git actuelle">
+                <StackPanel Orientation="Horizontal">
+                    <Viewbox Width="14" Height="14" Margin="0,0,6,0">
+                        <Path Data="{StaticResource IconBranch}"
+                              Stroke="{DynamicResource StatusBarForegroundBrush}" StrokeThickness="2"
+                              StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Width="24" Height="24" Stretch="None"/>
+                    </Viewbox>
+                    <TextBlock x:Name="BranchText"/>
+                </StackPanel>
+            </StatusBarItem>
+        
+            <!-- Compteurs d'erreurs et d'avertissements -->
+            <StatusBarItem ToolTip="Erreurs et avertissements">
+                <StackPanel Orientation="Horizontal">
+                    <Viewbox Width="14" Height="14" Margin="0,0,5,0">
+                        <Path Data="{StaticResource IconError}"
+                              Stroke="{DynamicResource StatusBarForegroundBrush}" StrokeThickness="2"
+                              StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Width="24" Height="24" Stretch="None"/>
+                    </Viewbox>
+                    <TextBlock x:Name="ErrorCountText" Text="0" Margin="0,0,12,0"/>
+                    <Viewbox Width="14" Height="14" Margin="0,0,5,0">
+                        <Path Data="{StaticResource IconWarning}"
+                              Stroke="{DynamicResource StatusBarForegroundBrush}" StrokeThickness="2"
+                              StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Width="24" Height="24" Stretch="None"/>
+                    </Viewbox>
+                    <TextBlock x:Name="WarningCountText" Text="0"/>
+                </StackPanel>
+            </StatusBarItem>
+
             <StatusBarItem>
                 <TextBlock x:Name="StatusMessage" Text="Prêt"/>
             </StatusBarItem>
+
             <StatusBarItem HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock x:Name="CursorText" Text="Ln 1, Col 1" Margin="0,0,16,0"/>
-                    <TextBlock x:Name="LanguageText" Text="Texte brut" Margin="0,0,16,0"/>
-                    <TextBlock x:Name="EncodingText" Text="UTF-8"/>
+                    <TextBlock x:Name="IndentText" Text="Espaces : 4" Margin="0,0,16,0"/>
+                    <TextBlock x:Name="EncodingText" Text="UTF-8" Margin="0,0,16,0"/>
+                    <TextBlock x:Name="LineEndingText" Text="CRLF" Margin="0,0,16,0"/>
+                    <TextBlock x:Name="LanguageText" Text="Texte brut"/>
                 </StackPanel>
             </StatusBarItem>
         </StatusBar>
