@@ -1,0 +1,77 @@
+<UserControl x:Class="IdeCSharp.UI.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="PARAMÈTRES"
+                   FontSize="11" FontWeight="SemiBold" Margin="14,12,10,8"
+                   Foreground="{DynamicResource MutedForegroundBrush}"/>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="14,0,14,16">
+
+                <!-- Apparence -->
+                <TextBlock Text="Apparence" FontWeight="SemiBold" Margin="0,4,0,8"
+                           Foreground="{DynamicResource PanelForegroundBrush}"/>
+                <TextBlock Text="Thème de base" Margin="0,0,0,4"
+                           Foreground="{DynamicResource MutedForegroundBrush}"/>
+                <ComboBox x:Name="ThemeBox" SelectionChanged="OnThemeChanged">
+                    <ComboBoxItem Content="Comme Windows"/>
+                    <ComboBoxItem Content="Clair"/>
+                    <ComboBoxItem Content="Sombre"/>
+                </ComboBox>
+                <TextBlock Text="Pour changer les couleurs, installe un thème dans Extensions (Ctrl+Maj+X)."
+                           TextWrapping="Wrap" FontSize="11" Margin="0,6,0,0"
+                           Foreground="{DynamicResource MutedForegroundBrush}"/>
+
+                <!-- Police de l'interface -->
+                <TextBlock Text="Police de l'interface" FontWeight="SemiBold" Margin="0,22,0,8"
+                           Foreground="{DynamicResource PanelForegroundBrush}"/>
+                <ComboBox x:Name="UiFontBox" SelectionChanged="OnUiFontChanged"/>
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Slider x:Name="UiSizeSlider" Minimum="10" Maximum="18" TickFrequency="1"
+                            IsSnapToTickEnabled="True" ValueChanged="OnUiSizeChanged"/>
+                    <TextBlock x:Name="UiSizeText" Grid.Column="1" Margin="10,0,0,0" MinWidth="40"
+                               Foreground="{DynamicResource MutedForegroundBrush}"/>
+                </Grid>
+
+                <!-- Police de l'éditeur -->
+                <TextBlock Text="Police de l'éditeur" FontWeight="SemiBold" Margin="0,22,0,8"
+                           Foreground="{DynamicResource PanelForegroundBrush}"/>
+                <ComboBox x:Name="EditorFontBox" SelectionChanged="OnEditorFontChanged"/>
+                <Grid Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Slider x:Name="EditorSizeSlider" Minimum="9" Maximum="28" TickFrequency="1"
+                            IsSnapToTickEnabled="True" ValueChanged="OnEditorSizeChanged"/>
+                    <TextBlock x:Name="EditorSizeText" Grid.Column="1" Margin="10,0,0,0" MinWidth="40"
+                               Foreground="{DynamicResource MutedForegroundBrush}"/>
+                </Grid>
+
+                <!-- Aperçu en direct : police, taille et couleurs du code -->
+                <Border Margin="0,12,0,0" Padding="10" CornerRadius="6" BorderThickness="1"
+                        Background="{DynamicResource WindowBackgroundBrush}"
+                        BorderBrush="{DynamicResource SplitterBrush}">
+                    <TextBlock FontFamily="{DynamicResource EditorFontFamily}"
+                               FontSize="{DynamicResource EditorFontSize}"
+                               Foreground="{DynamicResource PanelForegroundBrush}">
+                        <Run Foreground="{DynamicResource SyntaxCommentBrush}" Text="// Aperçu de la police"/><LineBreak/>
+                        <Run Foreground="{DynamicResource SyntaxKeywordBrush}" Text="public static void "/><Run Foreground="{DynamicResource SyntaxMethodBrush}" Text="Main"/><Run Text="()"/><LineBreak/>
+                        <Run Text="{}{"/><LineBreak/>
+                        <Run Text="    "/><Run Foreground="{DynamicResource SyntaxTypeBrush}" Text="string"/><Run Text=" nom = "/><Run Foreground="{DynamicResource SyntaxStringBrush}" Text="&quot;Kode&quot;"/><Run Text=";"/><LineBreak/>
+                        <Run Text="    "/><Run Foreground="{DynamicResource SyntaxTypeBrush}" Text="int"/><Run Text=" version = "/><Run Foreground="{DynamicResource SyntaxNumberBrush}" Text="1"/><Run Text=";"/><LineBreak/>
+                        <Run Text="}"/>
+                    </TextBlock>
+                </Border>
+
+                <Button Content="Réinitialiser les polices" Margin="0,22,0,0"
+                        HorizontalAlignment="Left" Click="OnResetClick"/>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

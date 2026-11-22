@@ -25,6 +25,7 @@ namespace IdeCSharp.UI
 
             // Thème et extension de la dernière session, avant d'afficher la fenêtre
             ThemeManager.Restore(Extensions);
+            AppFonts.Apply(UserSettings.Load());
             base.OnStartup(e);
         }
     }

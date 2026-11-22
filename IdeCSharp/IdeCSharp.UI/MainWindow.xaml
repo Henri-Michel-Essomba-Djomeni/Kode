@@ -3,6 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:IdeCSharp.UI"
         Title="Kode"
+        FontFamily="{DynamicResource UiFontFamily}"
+        FontSize="{DynamicResource UiFontSize}"
         Icon="{StaticResource KodeIconImage}"
         Width="1200" Height="760"
         MinWidth="800" MinHeight="480"
@@ -27,6 +29,7 @@
         <CommandBinding Command="{x:Static local:AppCommands.About}" Executed="OnCommandExecuted"/>
         <CommandBinding Command="{x:Static local:AppCommands.Exit}" Executed="OnCommandExecuted"/>
         <CommandBinding Command="{x:Static local:AppCommands.ShowExtensions}" Executed="OnCommandExecuted"/>
+        <CommandBinding Command="{x:Static local:AppCommands.ShowSettings}" Executed="OnCommandExecuted"/>
     </Window.CommandBindings>
 
     <Grid>
@@ -64,6 +67,7 @@
                 <MenuItem Command="{x:Static local:AppCommands.ToggleExplorer}"/>
                 <MenuItem Command="{x:Static local:AppCommands.ToggleBottomPanel}"/>
                 <MenuItem Command="{x:Static local:AppCommands.ShowExtensions}"/>
+                <MenuItem Command="{x:Static local:AppCommands.ShowSettings}"/>
                 <Separator/>
                 <MenuItem Header="_Thème">
                     <MenuItem Header="_Clair" Command="{x:Static local:AppCommands.SetTheme}" CommandParameter="Light"/>
@@ -129,6 +133,15 @@
                             Tag="{StaticResource IconTheme}"
                             ToolTip="Basculer thème clair / sombre"
                             Click="OnThemeButtonClick"/>
+
+                    <Grid DockPanel.Dock="Bottom">
+                        <Rectangle x:Name="SettingsIndicator" Width="2" HorizontalAlignment="Left"
+                                   Fill="{DynamicResource AccentBrush}" Visibility="Hidden"/>
+                        <Button Style="{StaticResource ActivityButtonStyle}"
+                                Tag="{StaticResource IconSettings}"
+                                ToolTip="Paramètres (Ctrl+,)"
+                                Click="OnSettingsButtonClick"/>
+                    </Grid>
                 </DockPanel>
             </Border>
 
@@ -162,6 +175,7 @@
                         </ContentControl>
                     </DockPanel>
                     <local:ExtensionsView x:Name="ExtensionsPanelView" Visibility="Collapsed"/>
+                    <local:SettingsView x:Name="SettingsPanelView" Visibility="Collapsed"/>
                 </Grid>
             </Border>
 
@@ -180,6 +194,7 @@
 
                 <!-- Éditeur (module Éditeur) : écran d'accueil tant qu'aucun fichier n'est ouvert -->
                 <ContentControl x:Name="EditorHost" Grid.Row="0">
+                    <Viewbox StretchDirection="DownOnly" Margin="24">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Image Source="{StaticResource KodeIconImage}" Width="96" Height="96"/>
                         <TextBlock Text="Kode" FontSize="34" FontWeight="SemiBold"
@@ -229,6 +244,7 @@
                             </Border>
                         </Grid>
                     </StackPanel>
+                    </Viewbox>
                 </ContentControl>
 
                 <GridSplitter x:Name="BottomSplitter" Grid.Row="1"
@@ -240,13 +256,6 @@
                 <Border x:Name="BottomPanel" Grid.Row="2"
                         Background="{DynamicResource PanelBackgroundBrush}">
                     <DockPanel>
-                        <!-- En-tête façon onglet : le texte est souligné par l'accent -->
-                        <Border DockPanel.Dock="Top" HorizontalAlignment="Left" Margin="12,0,0,0"
-                                BorderThickness="0,0,0,2" Padding="0,8,0,6"
-                                BorderBrush="{DynamicResource AccentBrush}">
-                            <TextBlock Text="SORTIE" FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource PanelForegroundBrush}"/>
-                        </Border>
                         <ContentControl x:Name="BottomHost">
                             <TextBlock Text="La sortie des programmes s'affichera ici."
                                        Margin="12,10,10,10"

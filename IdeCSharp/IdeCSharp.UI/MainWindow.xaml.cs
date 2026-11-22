@@ -78,6 +78,12 @@ namespace IdeCSharp.UI
                 return;
             }
 
+            if (e.Command == AppCommands.ShowSettings)
+            {
+                ShowSidebarView(SidebarView.Settings);
+                return;
+            }
+
             // Les commandes d'affichage et de fenêtre sont gérées ici
             if (e.Command == AppCommands.ToggleExplorer)
             {
@@ -138,7 +144,8 @@ namespace IdeCSharp.UI
         private enum SidebarView
         {
             Explorer,
-            Extensions
+            Extensions,
+            Settings
         }
 
         private SidebarView _currentView = SidebarView.Explorer;
@@ -147,7 +154,10 @@ namespace IdeCSharp.UI
 
         private void OnExtensionsButtonClick(object sender, RoutedEventArgs e) => ShowSidebarView(SidebarView.Extensions);
 
-        // Affiche une vue dans la colonne de gauche ; recliquer sur la vue ouverte referme la colonne
+        private void OnSettingsButtonClick(object sender, RoutedEventArgs e) => ShowSidebarView(SidebarView.Settings);
+
+        //private void OnSettingsButtonClick(object sender, RoutedEventArgs e) => ShowSidebarView(SidebarView.Settings);
+
         private void ShowSidebarView(SidebarView view)
         {
             bool panelVisible = ExplorerPanel.Visibility == Visibility.Visible;
@@ -161,10 +171,11 @@ namespace IdeCSharp.UI
             _currentView = view;
             ExplorerView.Visibility = view == SidebarView.Explorer ? Visibility.Visible : Visibility.Collapsed;
             ExtensionsPanelView.Visibility = view == SidebarView.Extensions ? Visibility.Visible : Visibility.Collapsed;
+            SettingsPanelView.Visibility = view == SidebarView.Settings ? Visibility.Visible : Visibility.Collapsed;
 
             if (!panelVisible)
             {
-                ToggleExplorer();   // la colonne était repliée : on la rouvre
+                ToggleExplorer();
             }
             else
             {
@@ -172,14 +183,12 @@ namespace IdeCSharp.UI
             }
         }
 
-        // Le trait violet n'apparaît que devant la vue actuellement ouverte
         private void UpdateIndicators()
         {
             bool visible = ExplorerPanel.Visibility == Visibility.Visible;
-            ExplorerIndicator.Visibility = visible && _currentView == SidebarView.Explorer
-                ? Visibility.Visible : Visibility.Hidden;
-            ExtensionsIndicator.Visibility = visible && _currentView == SidebarView.Extensions
-                ? Visibility.Visible : Visibility.Hidden;
+            ExplorerIndicator.Visibility = visible && _currentView == SidebarView.Explorer ? Visibility.Visible : Visibility.Hidden;
+            ExtensionsIndicator.Visibility = visible && _currentView == SidebarView.Extensions ? Visibility.Visible : Visibility.Hidden;
+            SettingsIndicator.Visibility = visible && _currentView == SidebarView.Settings ? Visibility.Visible : Visibility.Hidden;
         }
 
         private void ToggleExplorer()

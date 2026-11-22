@@ -107,7 +107,14 @@
         "HoverBrush": "#C9DDF0",
         "AccentBrush": "#0A84FF",
         "StatusBarBrush": "#0A84FF,#5AC8FA",
-        "StatusBarForegroundBrush": "#FFFFFF"
+        "StatusBarForegroundBrush": "#FFFFFF",
+        "StatusBarForegroundBrush": "#FFFFFF",
+        "SyntaxKeywordBrush": "#5EEAD4",
+        "SyntaxTypeBrush": "#7DD3FC",
+        "SyntaxMethodBrush": "#A5B4FC",
+        "SyntaxStringBrush": "#FDE68A",
+        "SyntaxNumberBrush": "#FDBA74",
+        "SyntaxCommentBrush": "#5E8A8F"
       }
     }
   ]
