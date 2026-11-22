@@ -2,14 +2,33 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:avalon="http://icsharpcode.net/sharpdevelop/avalonedit">
-    <avalon:TextEditor x:Name="CodeEditor"
-                       Background="{DynamicResource PanelBackgroundBrush}"
-                       Foreground="{DynamicResource PanelForegroundBrush}"
-                       FontFamily="Consolas"
-                       FontSize="14"
-                       WordWrap="False"
-                       HorizontalScrollBarVisibility="Auto"
-                       VerticalScrollBarVisibility="Auto"
-                       ShowLineNumbers="True"
-                       LineNumbersForeground="{DynamicResource MutedForegroundBrush}"/>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Bandeau d'information pour le mode gros fichier (masqué par défaut) -->
+        <Border x:Name="LargeFileBanner"
+                Grid.Row="0"
+                Background="{DynamicResource SplitterBrush}"
+                Padding="8,4"
+                Visibility="Collapsed">
+            <TextBlock x:Name="LargeFileBannerText"
+                       Foreground="{DynamicResource MutedForegroundBrush}"
+                       TextWrapping="Wrap"/>
+        </Border>
+
+        <avalon:TextEditor x:Name="CodeEditor"
+                           Grid.Row="1"
+                           Background="{DynamicResource PanelBackgroundBrush}"
+                           Foreground="{DynamicResource PanelForegroundBrush}"
+                           FontFamily="Consolas"
+                           FontSize="14"
+                           WordWrap="False"
+                           HorizontalScrollBarVisibility="Auto"
+                           VerticalScrollBarVisibility="Auto"
+                           ShowLineNumbers="True"
+                           LineNumbersForeground="{DynamicResource MutedForegroundBrush}"/>
+    </Grid>
 </UserControl>

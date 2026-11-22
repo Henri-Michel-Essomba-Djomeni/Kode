@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using ICSharpCode.AvalonEdit;
+using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Indentation;
 using ICSharpCode.AvalonEdit.Indentation.CSharp;
@@ -27,6 +28,12 @@ public partial class DocumentView : UserControl
     // Drapeau empêchant de passer en « modifié » pendant un LoadText.
     private bool _chargementEnCours;
     private bool _isModified;
+
+    // Chemin mémorisé pour rétablir la coloration en sortant du mode gros fichier
+    private string? _languagePath;
+
+    // Indique si le mode gros fichier est actif
+    private bool _isLargeFileMode;
 
     /// <summary>
     /// Initialise une nouvelle instance du composant <see cref="DocumentView"/>.
@@ -75,8 +82,8 @@ public partial class DocumentView : UserControl
         CodeEditor.TextArea.InputBindings.Add(
             new KeyBinding(ApplicationCommands.Redo, Key.Z, ModifierKeys.Control | ModifierKeys.Shift));
 
-        // T35 : désactiver aussi en mode gros fichier
-        AutoPairs.Attach(CodeEditor, () => CodeEditor.SyntaxHighlighting != null && !CodeEditor.IsReadOnly);
+        // Fermeture automatique des paires (désactivée en mode gros fichier ou lecture seule)
+        AutoPairs.Attach(CodeEditor, () => CodeEditor.SyntaxHighlighting != null && !CodeEditor.IsReadOnly && !IsLargeFileMode);
 
         // Suivi de la modification du texte par l'utilisateur
         CodeEditor.TextChanged += OnTextChanged;
@@ -122,8 +129,20 @@ public partial class DocumentView : UserControl
     /// <summary>
     /// Définit la coloration syntaxique et la stratégie d'indentation selon l'extension du fichier.
     /// Seuls les langages supportés (C#, XML, HTML, Python, JSON) sont activés, le reste étant traité en texte brut.
+    /// Mémorise le chemin pour pouvoir rétablir la coloration en sortant du mode gros fichier.
     /// </summary>
     public void SetLanguageFromPath(string path)
+    {
+        _languagePath = path;
+
+        // En mode gros fichier, on ne rétablit pas la coloration
+        if (_isLargeFileMode)
+            return;
+
+        ApplyLanguageFromPath(path);
+    }
+
+    private void ApplyLanguageFromPath(string path)
     {
         string extension = Path.GetExtension(path).ToLowerInvariant();
         var definition = HighlightingManager.Instance.GetDefinitionByExtension(extension);
@@ -173,6 +192,7 @@ public partial class DocumentView : UserControl
     /// <summary>
     /// Charge un nouveau texte dans l'éditeur, vide l'historique
     /// d'annulation et remet l'état de modification à faux.
+    /// Évalue ensuite le mode gros fichier d'après la longueur du texte.
     /// </summary>
     public void LoadText(string text)
     {
@@ -182,6 +202,115 @@ public partial class DocumentView : UserControl
             CodeEditor.Text = text;
             CodeEditor.Document.UndoStack.ClearAll();
             SetModified(false);
+        }
+        finally
+        {
+            _chargementEnCours = false;
+        }
+
+        // Évaluation du mode gros fichier après le chargement
+        EvaluateLargeFileMode(text.Length);
+    }
+
+    // ----------------------------------------------------------------
+    // Mode gros fichier (T35)
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Indique si le mode gros fichier est actif pour ce document.
+    /// </summary>
+    public bool IsLargeFileMode => _isLargeFileMode;
+
+    /// <summary>
+    /// Évalue si le texte chargé nécessite le mode gros fichier et l'applique.
+    /// </summary>
+    private void EvaluateLargeFileMode(int textLength)
+    {
+        bool shouldBeLarge = LargeFilePolicy.IsLarge(textLength);
+
+        if (shouldBeLarge && !_isLargeFileMode)
+        {
+            ActivateLargeFileMode(textLength);
+        }
+        else if (!shouldBeLarge && _isLargeFileMode)
+        {
+            DeactivateLargeFileMode();
+        }
+        else if (shouldBeLarge && _isLargeFileMode)
+        {
+            // Mise à jour du bandeau si la taille a changé (nouveau texte dans un document déjà en mode gros fichier)
+            UpdateLargeFileBanner(textLength);
+        }
+    }
+
+    private void ActivateLargeFileMode(int textLength)
+    {
+        _isLargeFileMode = true;
+
+        // Désactivation de la coloration syntaxique
+        CodeEditor.SyntaxHighlighting = null;
+
+        // Retour à la ligne désactivé et hyperliens désactivés
+        CodeEditor.WordWrap = false;
+        CodeEditor.Options.EnableHyperlinks = false;
+        CodeEditor.Options.EnableEmailHyperlinks = false;
+
+        // Stratégie d'indentation par défaut
+        CodeEditor.TextArea.IndentationStrategy = new DefaultIndentationStrategy();
+
+        // Lecture seule si le fichier dépasse le seuil
+        if (LargeFilePolicy.IsReadOnly(textLength))
+        {
+            CodeEditor.IsReadOnly = true;
+        }
+
+        // Affichage du bandeau d'information
+        UpdateLargeFileBanner(textLength);
+    }
+
+    private void DeactivateLargeFileMode()
+    {
+        _isLargeFileMode = false;
+
+        // Rétablir les options par défaut
+        CodeEditor.Options.EnableHyperlinks = true;
+        CodeEditor.Options.EnableEmailHyperlinks = true;
+        CodeEditor.IsReadOnly = false;
+
+        // Rétablir la coloration syntaxique à partir du chemin mémorisé
+        if (_languagePath != null)
+        {
+            ApplyLanguageFromPath(_languagePath);
+        }
+
+        // Masquer le bandeau
+        LargeFileBanner.Visibility = Visibility.Collapsed;
+    }
+
+    private void UpdateLargeFileBanner(int textLength)
+    {
+        string taille = LargeFilePolicy.FormatSize(textLength);
+        string message = $"Mode gros fichier ({taille}) : coloration et saisie automatique désactivées.";
+
+        if (LargeFilePolicy.IsReadOnly(textLength))
+        {
+            message += " Lecture seule.";
+        }
+
+        LargeFileBannerText.Text = message;
+        LargeFileBanner.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>
+    /// Libère la mémoire du document en remplaçant son contenu par un document vide.
+    /// Ne déclenche pas le marquage « modifié ».
+    /// </summary>
+    public void ReleaseMemory()
+    {
+        _chargementEnCours = true;
+        try
+        {
+            CodeEditor.Document = new TextDocument();
         }
         finally
         {
@@ -258,9 +387,14 @@ public partial class DocumentView : UserControl
 
     /// <summary>
     /// Remplace toutes les occurrences en une seule opération d'annulation.
+    /// Retourne 0 et ne fait rien en mode gros fichier.
     /// </summary>
     public int ReplaceAll(string search, string replacement, bool matchCase)
     {
+        // Désactivé en mode gros fichier
+        if (_isLargeFileMode)
+            return 0;
+
         if (IsReadOnly || string.IsNullOrEmpty(search))
             return 0;
 
@@ -291,12 +425,16 @@ public partial class DocumentView : UserControl
 
     /// <summary>
     /// Obtient les informations de correspondance : rang sélectionné (1-basé, ou 0) et nombre total d'occurrences.
-    /// Retourne Total = -1 si le document dépasse 2 000 000 caractères.
+    /// Retourne Total = -1 si le document dépasse 2 000 000 caractères ou en mode gros fichier.
     /// </summary>
     public (int Index, int Total) GetMatchInfo(string search, bool matchCase)
     {
         if (string.IsNullOrEmpty(search))
             return (0, 0);
+
+        // En mode gros fichier, le décompte est désactivé
+        if (_isLargeFileMode)
+            return (0, -1);
 
         string text = CodeEditor.Text;
         if (text.Length > 2_000_000)

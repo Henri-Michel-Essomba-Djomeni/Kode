@@ -11,6 +11,7 @@ namespace IdeCSharp.UI.Editor;
 public partial class FindReplaceBar : UserControl
 {
     private bool _isReadOnly;
+    private bool _isLargeFileMode;
 
     /// <summary>
     /// Texte actuellement saisi dans la zone de recherche.
@@ -119,6 +120,15 @@ public partial class FindReplaceBar : UserControl
         UpdateControlsState();
     }
 
+    /// <summary>
+    /// Met à jour l'état mode gros fichier pour désactiver le bouton « Tout remplacer ».
+    /// </summary>
+    public void SetLargeFileMode(bool isLargeFileMode)
+    {
+        _isLargeFileMode = isLargeFileMode;
+        UpdateControlsState();
+    }
+
     private void OnSearchBoxTextChanged(object sender, TextChangedEventArgs e)
     {
         UpdateControlsState();
@@ -137,7 +147,7 @@ public partial class FindReplaceBar : UserControl
         PreviousButton.IsEnabled = hasSearch;
         NextButton.IsEnabled = hasSearch;
         ReplaceButton.IsEnabled = hasSearch && !_isReadOnly;
-        ReplaceAllButton.IsEnabled = hasSearch && !_isReadOnly;
+        ReplaceAllButton.IsEnabled = hasSearch && !_isReadOnly && !_isLargeFileMode;
     }
 
     private void OnSearchBoxPreviewKeyDown(object sender, KeyEventArgs e)

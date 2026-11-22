@@ -70,6 +70,13 @@ public class EditorService : IEditorService
 
         // Chargement du contenu (non modifié, historique vidé)
         docView.LoadText(content);
+
+        // Notification en barre d'état si le document est en mode gros fichier
+        if (docView.IsLargeFileMode)
+        {
+            NotifyLargeFileStatus(content.Length);
+        }
+
         docView.FocusEditor();
 
         // Écouter les changements de position du curseur
@@ -102,8 +109,22 @@ public class EditorService : IEditorService
         if (!ConfirmClose(key, entry.Tab, entry.Doc))
             return false;
 
+        // Libérer la mémoire des gros fichiers avant de retirer l'onglet
+        bool wasLargeFile = entry.Doc.IsLargeFileMode;
+        if (wasLargeFile)
+        {
+            entry.Doc.ReleaseMemory();
+        }
+
         _documents.Remove(key);
         _view.RemoveTab(entry.Tab);
+
+        // Pour un gros fichier, libérer la mémoire immédiatement
+        if (wasLargeFile)
+        {
+            GC.Collect();
+        }
+
         return true;
     }
 
@@ -201,6 +222,12 @@ public class EditorService : IEditorService
             throw new InvalidOperationException($"Le document n'est pas ouvert : {path}");
 
         entry.Doc.LoadText(content);
+
+        // Notification en barre d'état si le document passe en mode gros fichier
+        if (entry.Doc.IsLargeFileMode)
+        {
+            NotifyLargeFileStatus(content.Length);
+        }
     }
 
     // ----------------------------------------------------------------
@@ -289,6 +316,7 @@ public class EditorService : IEditorService
 
     /// <summary>
     /// Nom du langage du document actif, ou « Texte brut » s'il n'y en a pas.
+    /// En mode gros fichier, retourne « Texte brut (gros fichier) ».
     /// </summary>
     public string ActiveLanguageName
     {
@@ -296,7 +324,11 @@ public class EditorService : IEditorService
         {
             string? activePath = ActiveDocumentPath;
             if (activePath != null && _documents.TryGetValue(activePath, out var entry))
+            {
+                if (entry.Doc.IsLargeFileMode)
+                    return "Texte brut (gros fichier)";
                 return entry.Doc.LanguageName;
+            }
 
             return "Texte brut";
         }
@@ -322,6 +354,28 @@ public class EditorService : IEditorService
         string key = NormalizePath(path);
         if (_documents.TryGetValue(key, out var entry))
             entry.Doc.MarkAsSaved();
+    }
+
+    /// <summary>
+    /// Indique si le document ouvert est en mode gros fichier.
+    /// Retourne false si le document n'est pas ouvert.
+    /// </summary>
+    public bool IsLargeFile(string path)
+    {
+        string key = NormalizePath(path);
+        return _documents.TryGetValue(key, out var entry) && entry.Doc.IsLargeFileMode;
+    }
+
+    /// <summary>
+    /// Affiche un message de mode gros fichier dans la barre d'état.
+    /// </summary>
+    private void NotifyLargeFileStatus(int textLength)
+    {
+        string taille = LargeFilePolicy.FormatSize(textLength);
+        if (Window.GetWindow(_view) is MainWindow mainWindow)
+        {
+            mainWindow.SetStatus($"Mode gros fichier : {taille}, coloration désactivée");
+        }
     }
 
     // ----------------------------------------------------------------

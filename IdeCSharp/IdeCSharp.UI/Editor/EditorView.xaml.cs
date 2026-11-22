@@ -113,6 +113,7 @@ public partial class EditorView : UserControl
         }
 
         FindBar.SetReadOnly(activeDoc.IsReadOnly);
+        FindBar.SetLargeFileMode(activeDoc.IsLargeFileMode);
         FindBar.Open(replaceMode, initialText);
         UpdateFindResults(activeDoc);
     }
@@ -190,6 +191,12 @@ public partial class EditorView : UserControl
     {
         if (ActiveTab?.Content is DocumentView activeDoc)
         {
+            if (activeDoc.IsLargeFileMode)
+            {
+                FindBar.SetResult("Remplacer tout est désactivé en mode gros fichier");
+                return;
+            }
+
             int count = activeDoc.ReplaceAll(FindBar.SearchText, FindBar.ReplaceText, FindBar.MatchCase);
             FindBar.SetResult($"{count} remplacement{(count > 1 ? "s" : "")}");
         }
@@ -417,6 +424,7 @@ public partial class EditorView : UserControl
                 if (ActiveTab?.Content is DocumentView activeDoc)
                 {
                     FindBar.SetReadOnly(activeDoc.IsReadOnly);
+                    FindBar.SetLargeFileMode(activeDoc.IsLargeFileMode);
                     UpdateFindResults(activeDoc);
                 }
                 else
