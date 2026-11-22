@@ -17,6 +17,9 @@ public partial class EditorView : UserControl
     // Maintient les abonnements pour pouvoir s'en détacher proprement à la fermeture de l'onglet
     private readonly Dictionary<TabItem, EventHandler> _modifiedHandlers = new();
 
+    // Décalage de zoom unique partagé par tous les documents ouverts (T24 : borné entre -8 et +34)
+    private int _zoomOffset;
+
     private MainWindow? _parentMainWindow;
     private string _lastSearchText = string.Empty;
 
@@ -245,6 +248,11 @@ public partial class EditorView : UserControl
         // Construction de l'en-tête : nom du fichier + astérisque si modifié + bouton de fermeture
         tab.Header = CreateTabHeader(fullPath, tab, documentView);
 
+        // Application du décalage de zoom actuel et écoute des demandes de zoom (T24)
+        documentView.ZoomOffset = _zoomOffset;
+        documentView.ZoomStepRequested += OnZoomStepRequested;
+        documentView.ZoomResetRequested += OnZoomResetRequested;
+
         // Mise à jour du compteur de recherche si le texte change pendant que la barre est visible
         documentView.TextChanged += (_, _) =>
         {
@@ -274,6 +282,13 @@ public partial class EditorView : UserControl
                 docView.ModifiedChanged -= handler;
             }
             _modifiedHandlers.Remove(tab);
+        }
+
+        // Désabonnement des événements de zoom (T24)
+        if (tab.Content is DocumentView doc)
+        {
+            doc.ZoomStepRequested -= OnZoomStepRequested;
+            doc.ZoomResetRequested -= OnZoomResetRequested;
         }
 
         int index = TabDocuments.Items.IndexOf(tab);
@@ -409,6 +424,45 @@ public partial class EditorView : UserControl
                     FindBar.Visibility = Visibility.Collapsed;
                 }
             }
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // Gestion du zoom de la police de l'éditeur (T24)
+    // ----------------------------------------------------------------
+
+    private void OnZoomStepRequested(int sens)
+    {
+        _zoomOffset = Math.Clamp(_zoomOffset + sens, -8, 34);
+        ApplyZoomToAll();
+        UpdateZoomStatus();
+    }
+
+    private void OnZoomResetRequested()
+    {
+        _zoomOffset = 0;
+        ApplyZoomToAll();
+        UpdateZoomStatus();
+    }
+
+    private void ApplyZoomToAll()
+    {
+        foreach (TabItem tab in TabDocuments.Items)
+        {
+            if (tab.Content is DocumentView doc)
+            {
+                doc.ZoomOffset = _zoomOffset;
+            }
+        }
+    }
+
+    private void UpdateZoomStatus()
+    {
+        if (ActiveTab?.Content is DocumentView activeDoc && activeDoc.BaseFontSize > 0)
+        {
+            int percent = (int)Math.Round(activeDoc.EditorFontSize / activeDoc.BaseFontSize * 100.0);
+            var mainWindow = Window.GetWindow(this) as MainWindow;
+            mainWindow?.SetStatus($"Zoom : {percent} %");
         }
     }
 }

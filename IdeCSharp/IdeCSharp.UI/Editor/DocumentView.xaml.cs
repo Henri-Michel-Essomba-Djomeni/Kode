@@ -46,6 +46,31 @@ public partial class DocumentView : UserControl
         CodeEditor.TextArea.TextView.SetResourceReference(TextView.CurrentLineBackgroundProperty, "SplitterBrush");
         CodeEditor.TextArea.TextView.CurrentLineBorder = new Pen(Brushes.Transparent, 0);
 
+        // Liaison avec les paramètres pour la police et la taille de base (T24)
+        if (Application.Current?.TryFindResource("EditorFontSize") is double)
+        {
+            SetResourceReference(BaseFontSizeProperty, "EditorFontSize");
+        }
+        else
+        {
+            BaseFontSize = 14.0;
+        }
+
+        if (Application.Current?.TryFindResource("EditorFontFamily") is FontFamily)
+        {
+            CodeEditor.SetResourceReference(Control.FontFamilyProperty, "EditorFontFamily");
+        }
+        else
+        {
+            CodeEditor.FontFamily = new FontFamily("Consolas");
+        }
+
+        ApplyFontSize();
+
+        // Gestionnaires locaux pour le zoom (T24)
+        CodeEditor.PreviewMouseWheel += OnCodeEditorPreviewMouseWheel;
+        CodeEditor.PreviewKeyDown += OnCodeEditorPreviewKeyDown;
+
         // Raccourci Ctrl+Maj+Z pour Rétablir (local au TextArea uniquement)
         CodeEditor.TextArea.InputBindings.Add(
             new KeyBinding(ApplicationCommands.Redo, Key.Z, ModifierKeys.Control | ModifierKeys.Shift));
@@ -416,5 +441,99 @@ public partial class DocumentView : UserControl
     public void FocusEditor()
     {
         CodeEditor.Focus();
+    }
+
+    // ----------------------------------------------------------------
+    // Police et zoom (T24)
+    // ----------------------------------------------------------------
+
+    /// <summary>
+    /// Identifie la propriété de dépendance <see cref="BaseFontSize"/>.
+    /// </summary>
+    public static readonly DependencyProperty BaseFontSizeProperty =
+        DependencyProperty.Register(
+            nameof(BaseFontSize),
+            typeof(double),
+            typeof(DocumentView),
+            new PropertyMetadata(14.0, (d, _) => ((DocumentView)d).ApplyFontSize()));
+
+    /// <summary>
+    /// Taille de base de la police de l'éditeur (suit en direct les paramètres d'application).
+    /// </summary>
+    public double BaseFontSize
+    {
+        get => (double)GetValue(BaseFontSizeProperty);
+        set => SetValue(BaseFontSizeProperty, value);
+    }
+
+    private int _zoomOffset;
+
+    /// <summary>
+    /// Décalage de zoom appliqué par-dessus la taille de base.
+    /// </summary>
+    public int ZoomOffset
+    {
+        get => _zoomOffset;
+        set
+        {
+            _zoomOffset = value;
+            ApplyFontSize();
+        }
+    }
+
+    /// <summary>
+    /// Taille effective actuelle de la police appliquée dans l'éditeur.
+    /// </summary>
+    public double EditorFontSize => CodeEditor.FontSize;
+
+    /// <summary>
+    /// Déclenché lorsqu'un incrément ou décrément de zoom est demandé (+1 ou -1).
+    /// </summary>
+    public event Action<int>? ZoomStepRequested;
+
+    /// <summary>
+    /// Déclenché lorsqu'une remise à zéro du zoom (décalage à zéro) est demandée.
+    /// </summary>
+    public event Action? ZoomResetRequested;
+
+    private void ApplyFontSize()
+    {
+        if (CodeEditor != null)
+        {
+            CodeEditor.FontSize = Math.Clamp(BaseFontSize + ZoomOffset, 6, 48);
+        }
+    }
+
+    private void OnCodeEditorPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            int sens = e.Delta > 0 ? 1 : -1;
+            ZoomStepRequested?.Invoke(sens);
+            e.Handled = true;
+        }
+    }
+
+    private void OnCodeEditorPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        // Avec Ctrl enfoncé (et sans Alt pour ne pas intercepter les combinaisons AltGr)
+        if ((Keyboard.Modifiers & ModifierKeys.Control) != 0 && (Keyboard.Modifiers & ModifierKeys.Alt) == 0)
+        {
+            if (e.Key == Key.Add || e.Key == Key.OemPlus)
+            {
+                ZoomStepRequested?.Invoke(1);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Subtract || e.Key == Key.OemMinus)
+            {
+                ZoomStepRequested?.Invoke(-1);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.D0 || e.Key == Key.NumPad0)
+            {
+                ZoomResetRequested?.Invoke();
+                e.Handled = true;
+            }
+        }
     }
 }
