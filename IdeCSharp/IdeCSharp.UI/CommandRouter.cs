@@ -37,6 +37,23 @@ namespace IdeCSharp.UI
         {
             _window = window;
             _window.CommandInvoked += OnCommandInvoked;
+
+            // Un clic sur l'aperçu du fichier : l'éditeur va à la ligne demandée
+            _window.EditorOverview.LineRequested += line =>
+            {
+                var path = GetActivePath();
+                if (path != null) Editor?.GoToLine(path, line);
+            };
+
+            // L'assistant reçoit le fichier ouvert comme contexte
+            _window.AssistantPanel.GetContext = () =>
+            {
+                var path = GetActivePath();
+                var editor = Editor;
+                return path is null || editor is null
+                    ? (null, null)
+                    : (Path.GetFileName(path), editor.GetText(path));
+            };
         }
 
         // async void est acceptable ici car c'est un gestionnaire d'événement ;
@@ -123,6 +140,7 @@ namespace IdeCSharp.UI
             var content = await files.ReadFileAsync(path, progress);
 
             editor.OpenDocument(path, content);
+            _window.EditorOverview.SetText(content);
             _window.SetLanguage(LanguageFor(path));
             _window.SetStatus($"Ouvert : {Path.GetFileName(path)}");
         }

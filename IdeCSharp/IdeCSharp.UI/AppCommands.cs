@@ -44,6 +44,9 @@ namespace IdeCSharp.UI
         public static readonly RoutedUICommand ShowSettings = Create("Paramètres", nameof(ShowSettings),
         new KeyGesture(Key.OemComma, ModifierKeys.Control));
 
+        public static readonly RoutedUICommand ToggleRightPanel = Create("Panneau de droite", nameof(ToggleRightPanel),
+        new KeyGesture(Key.B, ModifierKeys.Control | ModifierKeys.Alt));
+
         private static RoutedUICommand Create(string text, string name, params InputGesture[] gestures)
         {
             var gestureCollection = new InputGestureCollection();

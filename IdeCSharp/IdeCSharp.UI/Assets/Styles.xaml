@@ -156,4 +156,10 @@
     </Setter>
 </Style>
 
+<!-- Petit bouton d'icône pour la ligne des menus (plus bas que ceux de la barre d'activité) -->
+<Style x:Key="MenuIconButtonStyle" TargetType="Button" BasedOn="{StaticResource ActivityButtonStyle}">
+    <Setter Property="Width" Value="36"/>
+    <Setter Property="Height" Value="28"/>
+</Style>
+
 </ResourceDictionary>
