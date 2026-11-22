@@ -30,6 +30,7 @@
         <CommandBinding Command="{x:Static local:AppCommands.Exit}" Executed="OnCommandExecuted"/>
         <CommandBinding Command="{x:Static local:AppCommands.ShowExtensions}" Executed="OnCommandExecuted"/>
         <CommandBinding Command="{x:Static local:AppCommands.ShowSettings}" Executed="OnCommandExecuted"/>
+        <CommandBinding Command="{x:Static local:AppCommands.ToggleRightPanel}" Executed="OnCommandExecuted"/>
     </Window.CommandBindings>
 
     <Grid>
@@ -40,7 +41,12 @@
         </Grid.RowDefinitions>
 
         <!-- Barre de menus -->
-        <Menu Grid.Row="0">
+        <DockPanel Grid.Row="0">
+            <Button DockPanel.Dock="Right" Style="{StaticResource MenuIconButtonStyle}"
+                    Command="{x:Static local:AppCommands.ToggleRightPanel}"
+                    Tag="{StaticResource IconRightPanel}"
+                    ToolTip="Panneau de droite (Ctrl+Alt+B)"/>
+            <Menu>
             <MenuItem Header="_Fichier">
                 <MenuItem Command="ApplicationCommands.New" Header="_Nouveau fichier"/>
                 <MenuItem Command="ApplicationCommands.Open" Header="_Ouvrir un fichier..."/>
@@ -68,6 +74,7 @@
                 <MenuItem Command="{x:Static local:AppCommands.ToggleBottomPanel}"/>
                 <MenuItem Command="{x:Static local:AppCommands.ShowExtensions}"/>
                 <MenuItem Command="{x:Static local:AppCommands.ShowSettings}"/>
+                <MenuItem Command="{x:Static local:AppCommands.ToggleRightPanel}"/>
                 <Separator/>
                 <MenuItem Header="_Thème">
                     <MenuItem Header="_Clair" Command="{x:Static local:AppCommands.SetTheme}" CommandParameter="Light"/>
@@ -83,6 +90,7 @@
                 <MenuItem Command="{x:Static local:AppCommands.About}"/>
             </MenuItem>
         </Menu>
+        </DockPanel>
 
         <!-- Zone de travail : barre d'activité | explorateur | éditeur + panneau du bas -->
         <Grid Grid.Row="1">
@@ -91,6 +99,8 @@
                 <ColumnDefinition x:Name="ExplorerColumn" Width="260" MinWidth="150"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*" MinWidth="300"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition x:Name="RightColumn" Width="0" MinWidth="0"/>
             </Grid.ColumnDefinitions>
 
             <!-- Barre d'activité : boutons à icônes -->
@@ -264,9 +274,35 @@
                     </DockPanel>
                 </Border>
             </Grid>
-        </Grid>
+            <!-- Panneau de droite : aperçu du fichier en haut, assistant en bas (replié au départ) -->
+            <GridSplitter x:Name="RightSplitter" Grid.Column="4" Width="4" HorizontalAlignment="Stretch"
+                          ResizeBehavior="PreviousAndNext" Visibility="Collapsed"
+                          Background="{DynamicResource SplitterBrush}"/>
 
-        <!-- Barre d'état en dégradé -->
+            <Grid x:Name="RightPanel" Grid.Column="5" Visibility="Collapsed"
+                  Background="{DynamicResource PanelBackgroundBrush}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" MinHeight="100"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*" MinHeight="140"/>
+                </Grid.RowDefinitions>
+
+                <DockPanel Grid.Row="0">
+                    <TextBlock DockPanel.Dock="Top" Text="APERÇU DU FICHIER"
+                               FontSize="11" FontWeight="SemiBold" Margin="14,12,10,8"
+                               Foreground="{DynamicResource MutedForegroundBrush}"/>
+                    <local:MinimapView x:Name="MinimapPane" Margin="8,0,8,8"/>
+                </DockPanel>
+
+                <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch"
+                              ResizeBehavior="PreviousAndNext"
+                              Background="{DynamicResource SplitterBrush}"/>
+
+                <local:AssistantView x:Name="AssistantPane" Grid.Row="2"/>
+            </Grid>
+
+        </Grid>
+        
         <!-- Barre d'état en dégradé -->
         <StatusBar Grid.Row="2"
                    Background="{DynamicResource StatusBarBrush}"
@@ -290,7 +326,7 @@
                     <TextBlock x:Name="BranchText"/>
                 </StackPanel>
             </StatusBarItem>
-        
+
             <!-- Compteurs d'erreurs et d'avertissements -->
             <StatusBarItem ToolTip="Erreurs et avertissements">
                 <StackPanel Orientation="Horizontal">

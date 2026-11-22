@@ -9,6 +9,7 @@ namespace IdeCSharp.UI
     {
         // Tailles mémorisées pour retrouver la mise en page après un masquage
         private double _explorerWidth = 260;
+        private double _rightPanelWidth = 300;
         private double _bottomPanelHeight = 200;
         private readonly TerminalService _terminal = new();
         private readonly BottomPanelView _bottomTabs = new();
@@ -21,6 +22,12 @@ namespace IdeCSharp.UI
 
         /// <summary>Aiguille les commandes vers les modules ; chaque module s'y branche.</summary>
         public CommandRouter Router { get; }
+
+        /// <summary>Aperçu réduit du fichier : l'éditeur y envoie le texte et la zone visible.</summary>
+        public MinimapView EditorOverview => MinimapPane;
+
+        /// <summary>Assistant du panneau de droite : on lui branche un service d'IA.</summary>
+        public AssistantView AssistantPanel => AssistantPane;
 
 
         public MainWindow()
@@ -133,6 +140,12 @@ namespace IdeCSharp.UI
             if (e.Command == AppCommands.About)
             {
                 new AboutWindow { Owner = this }.ShowDialog();
+                return;
+            }
+
+            if (e.Command == AppCommands.ToggleRightPanel)
+            {
+                ToggleRightPanel();
                 return;
             }
 
@@ -252,5 +265,27 @@ namespace IdeCSharp.UI
                 BottomPanelRow.Height = new GridLength(_bottomPanelHeight);
             }
         }
+
+        private void ToggleRightPanel()
+        {
+            bool isVisible = RightPanel.Visibility == Visibility.Visible;
+
+            if (isVisible)
+            {
+                _rightPanelWidth = RightColumn.ActualWidth;
+                RightPanel.Visibility = Visibility.Collapsed;
+                RightSplitter.Visibility = Visibility.Collapsed;
+                RightColumn.MinWidth = 0;
+                RightColumn.Width = new GridLength(0);
+            }
+            else
+            {
+                RightPanel.Visibility = Visibility.Visible;
+                RightSplitter.Visibility = Visibility.Visible;
+                RightColumn.MinWidth = 200;
+                RightColumn.Width = new GridLength(_rightPanelWidth);
+            }
+        }
+
     }
 }
