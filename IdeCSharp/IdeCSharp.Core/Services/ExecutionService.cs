@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using IdeCSharp.Core.Interfaces;
 using IdeCSharp.Core.Models;
+using IdeCSharp.Core.Runners;
 
 namespace IdeCSharp.Core.Services;
 
@@ -140,6 +141,15 @@ public sealed class ExecutionService : IExecutionService
 
         try
         {
+            // Autres langages (Python, JS, C, ...) : on passe par le catalogue. C# garde son chemin habituel.
+            if (File.Exists(projectPath)
+                && RunnerCatalog.ForFile(projectPath) is { } runner
+                && runner.Language != "C#")
+            {
+                await RunFileAsync(projectPath, runner, cancellationToken);
+                return;
+            }
+
             var build = await BuildCoreAsync(projectPath, cancellationToken);
             if (!build.Success)
             {
@@ -176,6 +186,71 @@ public sealed class ExecutionService : IExecutionService
         }
     }
 
+    // ---------- Autres langages (T45) ----------
+
+    private async Task RunFileAsync(string file, RunnerDefinition runner, CancellationToken cancellationToken)
+    {
+        string path = CleanPath(file);
+        string? dir = Path.GetDirectoryName(path);
+
+        if (runner.OpenWithShell)
+        {
+            Emit($"Ouverture de {Path.GetFileName(path)} avec Windows...");
+            try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); }
+            catch (Win32Exception ex) { Emit("Impossible d'ouvrir le fichier : " + ex.Message); }
+            return;
+        }
+
+        if (RunnerCatalog.FindTool(runner) is not { } tool)
+        {
+            Emit($"{runner.Language} n'est pas installé. {runner.InstallHint}");
+            return;
+        }
+
+        string program = tool;
+        string arguments = RunnerCatalog.Expand(runner.RunArguments, path);
+
+        if (runner.NeedsCompile)
+        {
+            Emit($"Compilation ({runner.Language})...");
+            int compileCode = await ExecuteAsync(
+                RunnerCatalog.Expand(runner.CompileArguments!, path), false, line => Emit(line), cancellationToken,
+                fileName: tool, workingDirectory: dir);
+            if (compileCode != 0)
+            {
+                Emit("Compilation échouée : le programme n'est pas lancé.");
+                return;
+            }
+            program = RunnerCatalog.OutputPathFor(path);
+            arguments = "";
+        }
+
+        Emit("Exécution...");
+
+        bool delaiDepasse = false;
+        using var minuteur = new CancellationTokenSource();
+        if (MaxRunDuration is { } delai) minuteur.CancelAfter(delai);
+        using var registration = minuteur.Token.Register(() =>
+        {
+            if (KillCurrent()) delaiDepasse = true;
+        });
+
+        try
+        {
+            int exitCode = await ExecuteAsync(
+                arguments, true, line => Emit(line), cancellationToken,
+                fileName: program, workingDirectory: dir);
+
+            if (delaiDepasse)
+                Emit($"Délai maximal dépassé ({MaxRunDuration!.Value.TotalSeconds:0} s) : programme arrêté.");
+            Emit($"Programme terminé (code {exitCode}).");
+        }
+        catch (Win32Exception)
+        {
+            Emit($"Impossible de lancer {runner.Language}. {runner.InstallHint}");
+        }
+    }
+    
     // ---------- Saisie et arrêt ----------
 
     public void SendInput(string text)
@@ -218,11 +293,12 @@ public sealed class ExecutionService : IExecutionService
 
     /// <summary>Lance "dotnet &lt;arguments&gt;", lit les sorties ligne par ligne, retourne le code de sortie.</summary>
     private async Task<int> ExecuteAsync(
-        string arguments, bool redirectInput, Action<string> onLine, CancellationToken ct, Encoding? encoding = null)
+        string arguments, bool redirectInput, Action<string> onLine, CancellationToken ct, Encoding? encoding = null, string fileName = "dotnet", string? workingDirectory = null)
     {
         var psi = new ProcessStartInfo
         {
-            FileName = "dotnet",
+            FileName = fileName,
+            WorkingDirectory = workingDirectory ?? string.Empty,
             Arguments = arguments,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -233,6 +309,9 @@ public sealed class ExecutionService : IExecutionService
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        // Python et d'autres langages gardent leur sortie en mémoire quand elle est redirigée : on force l'affichage immédiat
+        psi.Environment["PYTHONUNBUFFERED"] = "1";
+        psi.Environment["PYTHONIOENCODING"] = "utf-8";
 
         using var process = new Process { StartInfo = psi };
 
