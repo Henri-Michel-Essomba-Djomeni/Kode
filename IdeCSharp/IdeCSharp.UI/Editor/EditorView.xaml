@@ -25,6 +25,8 @@
 
             <!-- Conteneur d'onglets pour les documents ouverts -->
             <TabControl x:Name="TabDocuments"
+                        Style="{StaticResource EditorTabControlStyle}"
+                        ItemContainerStyle="{StaticResource EditorTabItemStyle}"
                         Background="{DynamicResource PanelBackgroundBrush}"
                         Foreground="{DynamicResource PanelForegroundBrush}"
                         BorderThickness="0"

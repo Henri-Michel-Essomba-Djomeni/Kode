@@ -162,4 +162,101 @@
     <Setter Property="Height" Value="28"/>
 </Style>
 
+    <!-- ===== Onglets de l'éditeur ===== -->
+
+    <!-- Bouton de fermeture : invisible, sauf sur l'onglet actif ou survolé -->
+    <Style x:Key="TabCloseButtonStyle" TargetType="Button">
+        <Setter Property="Width" Value="18"/>
+        <Setter Property="Height" Value="18"/>
+        <Setter Property="Opacity" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Foreground" Value="{DynamicResource MutedForegroundBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" CornerRadius="4" Background="Transparent">
+                        <Path Data="M0,0 L8,8 M8,0 L0,8"
+                              Stroke="{TemplateBinding Foreground}" StrokeThickness="1.4"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Width="8" Height="8" Stretch="None"
+                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource SplitterBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource PanelForegroundBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <!-- On le montre quand l'onglet parent est actif ou survolé -->
+            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TabItem}}" Value="True">
+                <Setter Property="Opacity" Value="1"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=TabItem}}" Value="True">
+                <Setter Property="Opacity" Value="1"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Un onglet : fond au survol, trait d'accent en bas quand il est actif -->
+    <Style x:Key="EditorTabItemStyle" TargetType="TabItem">
+        <Setter Property="Foreground" Value="{DynamicResource MutedForegroundBrush}"/>
+        <Setter Property="Padding" Value="12,0,8,0"/>
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Border x:Name="Root" Background="Transparent" MinWidth="90" MaxWidth="230">
+                        <Grid>
+                            <ContentPresenter ContentSource="Header"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"/>
+                            <Rectangle x:Name="Accent" Height="2" VerticalAlignment="Bottom"
+                                       Fill="{DynamicResource AccentBrush}" Visibility="Collapsed"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource PanelBackgroundBrush}"/>
+                            <Setter TargetName="Accent" Property="Visibility" Value="Visible"/>
+                            <Setter Property="Foreground" Value="{DynamicResource PanelForegroundBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Le conteneur : tous les onglets sur UNE seule ligne, qui défile au lieu de s'empiler -->
+    <Style x:Key="EditorTabControlStyle" TargetType="TabControl">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid SnapsToDevicePixels="True">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Background="{DynamicResource ActivityBarBackgroundBrush}"
+                                BorderBrush="{DynamicResource SplitterBrush}" BorderThickness="0,0,0,1">
+                            <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Disabled">
+                                <StackPanel IsItemsHost="True" Orientation="Horizontal"/>
+                            </ScrollViewer>
+                        </Border>
+                        <Border Grid.Row="1" Background="{TemplateBinding Background}">
+                            <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent"/>
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

@@ -23,8 +23,8 @@
 
         <!-- Affichage de la sortie : le reste de la place. Aucune couleur en dur : le thème s'en charge. -->
         <TextBox x:Name="OutputBox" Margin="6,0,6,4"
-                 IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
+                 IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
                  FontFamily="Consolas" FontSize="12"
-                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
+                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"/>
     </DockPanel>
 </UserControl>
