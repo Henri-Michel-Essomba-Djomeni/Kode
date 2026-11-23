@@ -1,4 +1,7 @@
 using System;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,9 +21,18 @@ public partial class OutputPanel : UserControl
     private IExecutionService? _execution;
     private int _chars;
 
+    private static readonly Regex ErrorLineRegex = new(
+        @"^(?<file>[^\s(][^(])\((?<line>\d+),(?<col>\d+)\):\s(error|warning)\b",
+        RegexOptions.Compiled);
+    private string? _projectDir;
+
+    /// <summary>Double-clic sur une erreur : chemin complet, ligne, colonne.</summary>
+    public event Action<string, int, int>? ErrorActivated;
+
     public OutputPanel()
     {
         InitializeComponent();
+        OutputBox.MouseDoubleClick += OutputBox_MouseDoubleClick;
     }
 
     /// <summary>Branche le panneau sur le service d'exécution : tout ce qu'il émet s'affiche ici.</summary>
@@ -40,6 +52,12 @@ public partial class OutputPanel : UserControl
         {
             Dispatcher.InvokeAsync(() => AppendLine(text));
             return;
+        }
+
+        if (text.StartsWith("Compilation de ") && text.EndsWith("..."))
+        {
+            string p = text.Substring(15, text.Length - 18).Trim('"');
+            _projectDir = File.Exists(p) ? Path.GetDirectoryName(p) : p;
         }
 
         OutputBox.AppendText(text + Environment.NewLine);
@@ -62,6 +80,37 @@ public partial class OutputPanel : UserControl
         _chars = 0;
     }
 
+    private void OutputBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        string all = OutputBox.Text;
+        if (all.Length == 0) return;
+
+        int index = OutputBox.GetCharacterIndexFromPoint(e.GetPosition(OutputBox), true);
+        if (index < 0) return;
+        if (index >= all.Length) index = all.Length - 1;
+
+        int start = index == 0 ? 0 : all.LastIndexOf('\n', index - 1) + 1;
+        int end = all.IndexOf('\n', index);
+        if (end < 0) end = all.Length;
+
+        var m = ErrorLineRegex.Match(all[start..end].Trim());
+        if (!m.Success) return;
+
+        string? path = ResolveFile(m.Groups["file"].Value);
+        if (path == null) return;
+
+        ErrorActivated?.Invoke(path, int.Parse(m.Groups["line"].Value), int.Parse(m.Groups["col"].Value));
+        e.Handled = true;
+    }
+
+    private string? ResolveFile(string name)
+    {
+        if (Path.IsPathRooted(name) && File.Exists(name)) return name;
+        if (_projectDir == null || !Directory.Exists(_projectDir)) return null;
+
+        return Directory.EnumerateFiles(_projectDir, Path.GetFileName(name), SearchOption.AllDirectories)
+            .FirstOrDefault(f => !f.Contains(@"\obj\") && !f.Contains(@"\bin\"));
+    }
     private void Clear_Click(object sender, RoutedEventArgs e) => Clear();
 
     private void Copy_Click(object sender, RoutedEventArgs e)
