@@ -20,10 +20,6 @@ namespace IdeCSharp.UI.Editor;
 /// </summary>
 public partial class DocumentView : UserControl
 {
-    private static readonly HashSet<string> SupportedLanguages = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "C#", "XML", "HTML", "Python", "JSON"
-    };
 
     // Drapeau empêchant de passer en « modifié » pendant un LoadText.
     private bool _chargementEnCours;
@@ -150,7 +146,7 @@ public partial class DocumentView : UserControl
         string extension = Path.GetExtension(path).ToLowerInvariant();
         var definition = HighlightingManager.Instance.GetDefinitionByExtension(extension);
 
-        if (definition != null && SupportedLanguages.Contains(definition.Name))
+        if (definition != null && SyntaxTheme.IsSupported(definition.Name))
         {
             CodeEditor.SyntaxHighlighting = definition;
         }

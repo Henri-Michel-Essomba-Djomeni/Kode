@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using ICSharpCode.AvalonEdit.Highlighting;
@@ -6,16 +7,23 @@ using ICSharpCode.AvalonEdit.Highlighting;
 namespace IdeCSharp.UI.Editor;
 
 /// <summary>
-/// Gère la palette de couleurs de la coloration syntaxique selon le thème clair ou sombre
-/// pour tous les langages pris en charge (C#, XML, HTML, Python, JSON, JavaScript, CSS).
+/// Liste des langages colorés par Kode et palette de couleurs selon le thème clair ou sombre.
+/// Les noms sont ceux des définitions AvalonEdit ; « C++ » couvre aussi les fichiers .c.
 /// Unique fichier du projet où les couleurs de coloration sont écrites en dur.
 /// </summary>
 public static class SyntaxTheme
 {
-    /// <summary>
-    /// Détermine si le thème actuel est sombre d'après la luminance du fond du panneau.
-    /// Retourne false (thème clair) par défaut si la ressource est absente.
-    /// </summary>
+    // Les 14 langages exécutables de Kode, plus XML, CSS et JSON
+    private static readonly string[] SupportedNames =
+    {
+        "C#", "C++", "Java", "JavaScript", "PHP", "PowerShell", "Python",
+        "Rust", "Go", "Ruby", "Lua", "Batch", "HTML", "XML", "CSS", "JSON"
+    };
+
+    /// <summary>Vrai si Kode sait colorer la définition de ce nom.</summary>
+    public static bool IsSupported(string? name) =>
+        name != null && SupportedNames.Contains(name, StringComparer.OrdinalIgnoreCase);
+
     public static bool IsDarkTheme()
     {
         if (Application.Current?.TryFindResource("PanelBackgroundBrush") is SolidColorBrush brush)
@@ -27,72 +35,62 @@ public static class SyntaxTheme
         return false;
     }
 
-    /// <summary>
-    /// Recolore les définitions de syntaxe prises en charge selon le thème spécifié.
-    /// </summary>
     public static void Apply(bool dark)
     {
-        // Enregistre les définitions personnalisées avant toute recoloration
+        // Les définitions personnalisées doivent exister avant d'être recolorées
         ExtraLanguages.Register();
 
-        string[] languageNames = { "C#", "XML", "HTML", "Python", "JSON", "JavaScript", "CSS" };
-
-        foreach (var lang in languageNames)
+        foreach (var language in SupportedNames)
         {
-            var definition = HighlightingManager.Instance.GetDefinition(lang);
+            var definition = HighlightingManager.Instance.GetDefinition(language);
             if (definition == null)
                 continue;
 
             foreach (var color in definition.NamedHighlightingColors)
             {
-                string name = color.Name ?? string.Empty;
-                color.Foreground = GetBrush(name, dark);
+                color.Foreground = GetBrush(color.Name ?? string.Empty, dark);
             }
         }
     }
 
+    // Écrit une couleur sous la forme 0xRRGGBB : une pour le thème sombre, une pour le clair
+    private static SimpleHighlightingBrush Brush(bool dark, int darkRgb, int lightRgb)
+    {
+        int v = dark ? darkRgb : lightRgb;
+        return new SimpleHighlightingBrush(Color.FromRgb((byte)(v >> 16), (byte)(v >> 8), (byte)v));
+    }
+
+    private static bool Has(string text, params string[] parts) => parts.Any(text.Contains);
+
+    // On devine le rôle d'une couleur d'après son nom. Retourner null laisse la couleur
+    // normale de l'éditeur (ponctuation, opérateurs...).
     private static SimpleHighlightingBrush? GetBrush(string name, bool dark)
     {
-        string lower = name.ToLowerInvariant();
+        string l = name.ToLowerInvariant();
 
-        // 1. Commentaire
-        if (lower.Contains("comment") || lower.Contains("xmldoc"))
-            return new SimpleHighlightingBrush(dark ? Color.FromRgb(0x6A, 0x99, 0x55) : Color.FromRgb(0x00, 0x80, 0x00));
+        if (Has(l, "comment", "xmldoc", "doctags"))
+            return Brush(dark, 0x6A9955, 0x008000);
+        if (Has(l, "doctype", "xmldeclaration", "cdata", "preprocessor"))
+            return Brush(dark, 0x9B9B9B, 0x808080);
+        if (l.Contains("regex"))
+            return Brush(dark, 0xD16969, 0x811F3F);
+        if (Has(l, "attributevalue", "string", "char"))
+            return Brush(dark, 0xCE9178, 0xA31515);
+        if (Has(l, "attribute", "property", "variable"))
+            return Brush(dark, 0x9CDCFE, 0x0451A5);
+        if (Has(l, "tag", "selector"))
+            return Brush(dark, 0x569CD6, 0x800000);
+        if (Has(l, "entit", "number", "digit") || l == "value")
+            return Brush(dark, 0xB5CEA8, 0x098658);
+        if (l == "class")
+            return Brush(dark, 0x4EC9B0, 0x267F99);
+        if (Has(l, "keyword", "modifier", "visibility", "true", "null", "this", "type", "semantic",
+                   "getset", "context", "statement", "exceptionhandling", "controlflow", "void",
+                   "package", "namespace", "friend", "literal", "constant", "intrinsic"))
+            return Brush(dark, 0x569CD6, 0x0000FF);
+        if (Has(l, "method", "function", "command"))
+            return Brush(dark, 0xDCDCAA, 0x795E26);
 
-        // 2. Préprocesseur
-        if (lower.Contains("doctype") || lower.Contains("xmldeclaration") || lower.Contains("cdata") || lower.Contains("preprocessor"))
-            return new SimpleHighlightingBrush(dark ? Color.FromRgb(0x9B, 0x9B, 0x9B) : Color.FromRgb(0x80, 0x80, 0x80));
-
-        // 3. Chaîne
-        if (lower.Contains("attributevalue") || lower.Contains("string") || lower.Contains("char"))
-            return new SimpleHighlightingBrush(dark ? Color.FromRgb(0xCE, 0x91, 0x78) : Color.FromRgb(0xA3, 0x15, 0x15));
-
-        // 4. Attribut / Propriété
-        if (lower.Contains("attributename") || lower.Contains("property"))
-            return new SimpleHighlightingBrush(dark ? Color.FromRgb(0x9C, 0xDC, 0xFE) : Color.FromRgb(0x04, 0x51, 0xA5));
-
-        // 5. Balise
-        if (lower.Contains("tag"))
-            return new SimpleHighlightingBrush(dark ? Color.FromRgb(0x56, 0x9C, 0xD6) : Color.FromRgb(0x80, 0x00, 0x00));
-
-        // 6. Nombre
-        if (lower.Contains("entity") || lower.Contains("number") || lower.Contains("digit"))
-            return new SimpleHighlightingBrush(dark ? Color.FromRgb(0xB5, 0xCE, 0xA8) : Color.FromRgb(0x09, 0x86, 0x58));
-
-        // 7. Mot-clé
-        if (lower.Contains("keyword") || lower.Contains("modifier") || lower.Contains("visibility") ||
-            lower.Contains("true") || lower.Contains("null") || lower.Contains("this") ||
-            lower.Contains("type") || lower.Contains("semantic") || lower.Contains("getset") ||
-            lower.Contains("context"))
-        {
-            return new SimpleHighlightingBrush(dark ? Color.FromRgb(0x56, 0x9C, 0xD6) : Color.FromRgb(0x00, 0x00, 0xFF));
-        }
-
-        // 8. Appel de méthode
-        if (lower.Contains("method"))
-            return new SimpleHighlightingBrush(dark ? Color.FromRgb(0xDC, 0xDC, 0xAA) : Color.FromRgb(0x79, 0x5E, 0x26));
-
-        // 9. Tout autre nom
         return null;
     }
 }
