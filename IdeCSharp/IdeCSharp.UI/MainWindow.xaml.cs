@@ -46,6 +46,7 @@ namespace IdeCSharp.UI
             // On ferme proprement la console quand la fenêtre se ferme
             Closed += (_, _) => _terminal.Dispose();
             InitExecutionModule();
+            InitEditorModule();
             // Barre de titre sombre ou claire selon le thème
             SourceInitialized += (_, _) => WindowStyler.SetDarkTitleBar(this, ThemeManager.IsDark);
             ThemeManager.ThemeChanged += dark => WindowStyler.SetDarkTitleBar(this, dark);
