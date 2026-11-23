@@ -51,6 +51,9 @@
                 <MenuItem Command="ApplicationCommands.New" Header="_Nouveau fichier"/>
                 <MenuItem Command="ApplicationCommands.Open" Header="_Ouvrir un fichier..."/>
                 <MenuItem Command="{x:Static local:AppCommands.OpenFolder}"/>
+                <MenuItem x:Name="RecentMenu" Header="Ouvrir un _récent" SubmenuOpened="OnRecentMenuOpened">
+                    <MenuItem Header="(chargement…)" IsEnabled="False"/>
+                </MenuItem>
                 <Separator/>
                 <MenuItem Command="ApplicationCommands.Save" Header="_Enregistrer"/>
                 <MenuItem Command="{x:Static local:AppCommands.SaveAs}"/>

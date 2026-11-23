@@ -14,7 +14,7 @@ partial class MainWindow
     private void InitEditorModule()
     {
         _editorView = new EditorView();
-        _editorService = _editorView.Service;   // le service est créé par EditorView lui-même   // ★ ligne à confirmer avec le résultat de l'étape 0
+        _editorService = _editorView.Service;   // le service est créé par EditorView lui-même
 
         // Le contrôle des onglets prend la place de l'écran d'accueil
         SetEditorContent(_editorView);
@@ -44,7 +44,7 @@ partial class MainWindow
         // Barre d'état : position du curseur
         _editorService.CaretPositionChanged += SetCursorPosition;
 
-        // Changement d'onglet : langage dans la barre d'état + aperçu du fichier.
+        // Changement d'onglet : langage, encodage et aperçu du fichier.
         // On attend la fin de OpenDocument (Background), sinon le document
         // n'est pas encore enregistré dans le service et GetText échouerait.
         _editorService.ActiveDocumentChanged += path =>
@@ -53,6 +53,7 @@ partial class MainWindow
                 try
                 {
                     SetLanguage(_editorService.ActiveLanguageName);
+                    SetEncoding(Router.EncodingFor(path));
                     EditorOverview.SetText(path is null ? string.Empty : _editorService.GetText(path));
                 }
                 catch (InvalidOperationException)
@@ -61,5 +62,19 @@ partial class MainWindow
                     EditorOverview.SetText(string.Empty);
                 }
             });
+
+        // Accueil : liste des récents (un clic ouvre) et mise à jour quand elle change
+        _editorView.Welcome.RecentRequested += OpenRecent;
+        Router.RecentsChanged += RefreshWelcomeRecents;
+        RefreshWelcomeRecents();
+    }
+
+    // Remet à jour la liste des récents de l'accueil (dossiers d'abord, puis fichiers)
+    private void RefreshWelcomeRecents()
+    {
+        var recents = Router.Recents;
+        if (recents is null || _editorView is null) return;
+
+        _editorView.Welcome.SetRecents(recents.GetRecentFolders().Concat(recents.GetRecentFiles()));
     }
 }
