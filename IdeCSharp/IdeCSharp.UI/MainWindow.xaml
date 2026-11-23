@@ -93,7 +93,7 @@
         </DockPanel>
 
         <!-- Zone de travail : barre d'activité | explorateur | éditeur + panneau du bas -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" Background="{DynamicResource ActivityBarBackgroundBrush}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition x:Name="ExplorerColumn" Width="260" MinWidth="150"/>
@@ -101,6 +101,7 @@
                 <ColumnDefinition Width="*" MinWidth="300"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition x:Name="RightColumn" Width="0" MinWidth="0"/>
+                <ColumnDefinition Width="8"/>
             </Grid.ColumnDefinitions>
 
             <!-- Barre d'activité : boutons à icônes -->
@@ -156,7 +157,8 @@
             </Border>
 
             <!-- Explorateur (module Fichiers) -->
-            <Border x:Name="ExplorerPanel" Grid.Column="1"
+                <Border x:Name="ExplorerPanel" Grid.Column="1"
+                    Margin="0,4,0,8" CornerRadius="8" local:RoundedClip.Radius="8"
                     Background="{DynamicResource PanelBackgroundBrush}">
                 <Grid>
                     <DockPanel x:Name="ExplorerView">
@@ -190,9 +192,9 @@
             </Border>
 
             <GridSplitter x:Name="ExplorerSplitter" Grid.Column="2"
-                          Width="4" HorizontalAlignment="Stretch"
+                          Width="8" HorizontalAlignment="Stretch"
                           ResizeBehavior="PreviousAndNext"
-                          Background="{DynamicResource SplitterBrush}"/>
+                          Background="Transparent"/>
 
             <!-- Éditeur + panneau du bas -->
             <Grid Grid.Column="3">
@@ -203,7 +205,9 @@
                 </Grid.RowDefinitions>
 
                 <!-- Éditeur (module Éditeur) : écran d'accueil tant qu'aucun fichier n'est ouvert -->
-                <ContentControl x:Name="EditorHost" Grid.Row="0">
+                <Border Grid.Row="0" Margin="0,4,0,0" CornerRadius="8" local:RoundedClip.Radius="8"
+                        Background="{DynamicResource PanelBackgroundBrush}">
+                <ContentControl x:Name="EditorHost">
                     <Viewbox StretchDirection="DownOnly" Margin="24">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Image Source="{StaticResource KodeIconImage}" Width="96" Height="96"/>
@@ -256,14 +260,16 @@
                     </StackPanel>
                     </Viewbox>
                 </ContentControl>
+                </Border>
 
                 <GridSplitter x:Name="BottomSplitter" Grid.Row="1"
-                              Height="4" HorizontalAlignment="Stretch"
+                              Height="8" HorizontalAlignment="Stretch"
                               ResizeBehavior="PreviousAndNext"
-                              Background="{DynamicResource SplitterBrush}"/>
+                              Background="Transparent"/>
 
                 <!-- Panneau du bas : sortie, terminal (modules Exécution et Terminal) -->
                 <Border x:Name="BottomPanel" Grid.Row="2"
+                        Margin="0,0,0,8" CornerRadius="8" local:RoundedClip.Radius="8"
                         Background="{DynamicResource PanelBackgroundBrush}">
                     <DockPanel>
                         <ContentControl x:Name="BottomHost">
@@ -275,11 +281,12 @@
                 </Border>
             </Grid>
             <!-- Panneau de droite : aperçu du fichier en haut, assistant en bas (replié au départ) -->
-            <GridSplitter x:Name="RightSplitter" Grid.Column="4" Width="4" HorizontalAlignment="Stretch"
+            <GridSplitter x:Name="RightSplitter" Grid.Column="4" Width="8" HorizontalAlignment="Stretch"
                           ResizeBehavior="PreviousAndNext" Visibility="Collapsed"
-                          Background="{DynamicResource SplitterBrush}"/>
+                          Background="Transparent"/>
 
             <Grid x:Name="RightPanel" Grid.Column="5" Visibility="Collapsed"
+                  Margin="0,4,0,8" local:RoundedClip.Radius="8"
                   Background="{DynamicResource PanelBackgroundBrush}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" MinHeight="100"/>
@@ -302,7 +309,7 @@
             </Grid>
 
         </Grid>
-        
+
         <!-- Barre d'état en dégradé -->
         <StatusBar Grid.Row="2"
                    Background="{DynamicResource StatusBarBrush}"
