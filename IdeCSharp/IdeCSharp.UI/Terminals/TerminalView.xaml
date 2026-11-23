@@ -1,10 +1,11 @@
 <UserControl x:Class="IdeCSharp.UI.Terminal.TerminalView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:IdeCSharp.UI">
 
     <DockPanel>
         <!-- Barre du haut : choix de la console, redémarrer, effacer -->
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,4">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,6">
             <TextBlock Text="Console :" VerticalAlignment="Center" Margin="0,0,6,0"
                        Foreground="{DynamicResource PanelForegroundBrush}"/>
             <ComboBox x:Name="ShellCombo" Width="130" SelectedIndex="0"
@@ -16,15 +17,50 @@
             <Button Content="Effacer" Margin="6,0,0,0" Padding="10,2" Click="OnClearClick"/>
         </StackPanel>
 
-        <!-- Ligne de saisie en bas -->
-        <TextBox x:Name="InputBox" DockPanel.Dock="Bottom" Margin="6,0,6,6"
-                 FontFamily="Consolas" FontSize="12"
-                 PreviewKeyDown="OnInputKeyDown"/>
+        <!-- Ligne de saisie : carte arrondie avec une flèche d'invite -->
+        <Border DockPanel.Dock="Bottom" Margin="8,0,8,8" Padding="12,7" CornerRadius="8"
+                Background="{DynamicResource TerminalBackgroundBrush}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Left" Text="❯" FontWeight="Bold" Margin="0,0,10,0"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource TerminalPromptBrush}"/>
+                <TextBox x:Name="InputBox"
+                         FontFamily="{DynamicResource EditorFontFamily}" FontSize="13"
+                         Background="Transparent" BorderThickness="0"
+                         Foreground="{DynamicResource TerminalForegroundBrush}"
+                         CaretBrush="{DynamicResource TerminalPromptBrush}"
+                         PreviewKeyDown="OnInputKeyDown">
+                    <!-- Gabarit minimal : pas de bordure ni de liseré au focus -->
+                    <TextBox.Template>
+                        <ControlTemplate TargetType="TextBox">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
+                                          HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Hidden"/>
+                        </ControlTemplate>
+                    </TextBox.Template>
+                </TextBox>
+            </DockPanel>
+        </Border>
 
-        <!-- Affichage de la sortie : le reste de la place. Aucune couleur en dur : le thème s'en charge. -->
-        <TextBox x:Name="OutputBox" Margin="6,0,6,4"
-                 IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
-                 FontFamily="Consolas" FontSize="12"
-                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"/>
+        <!-- Sortie : carte arrondie, texte coloré par le code (invite, erreurs) -->
+        <Border Margin="8,0,8,6" CornerRadius="8" ui:RoundedClip.Radius="8"
+                Background="{DynamicResource TerminalBackgroundBrush}">
+            <RichTextBox x:Name="OutputBox"
+                         IsReadOnly="True" Background="Transparent" BorderThickness="0"
+                         Padding="12,8"
+                         FontFamily="{DynamicResource EditorFontFamily}" FontSize="13"
+                         Foreground="{DynamicResource TerminalForegroundBrush}"
+                         SelectionBrush="{DynamicResource AccentBrush}" SelectionOpacity="0.35"
+                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <RichTextBox.Template>
+                    <ControlTemplate TargetType="RichTextBox">
+                        <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
+                                      Padding="{TemplateBinding Padding}"
+                                      HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}"
+                                      VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}"/>
+                    </ControlTemplate>
+                </RichTextBox.Template>
+            </RichTextBox>
+        </Border>
     </DockPanel>
 </UserControl>
