@@ -11,9 +11,9 @@
         <TextBox x:Name="OutputBox" Grid.Row="0"
                  IsReadOnly="True"
                  FontFamily="Consolas" FontSize="13"
-                 TextWrapping="NoWrap"
+                 TextWrapping="Wrap"
                  VerticalScrollBarVisibility="Auto"
-                 HorizontalScrollBarVisibility="Auto"
+                 HorizontalScrollBarVisibility="Disabled"
                  BorderThickness="0" Padding="10,4"
                  Background="{DynamicResource PanelBackgroundBrush}"
                  Foreground="{DynamicResource PanelForegroundBrush}"/>

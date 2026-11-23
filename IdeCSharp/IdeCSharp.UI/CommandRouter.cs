@@ -4,6 +4,7 @@ using System.Windows.Input;
 using IdeCSharp.Core.Interfaces;
 using Microsoft.Win32;
 using IdeCSharp.Core.Git;
+using IdeCSharp.Core.Runners;
 
 namespace IdeCSharp.UI
 {
@@ -223,6 +224,16 @@ namespace IdeCSharp.UI
                 return;
             }
 
+            // Fichier actif géré par le catalogue (PHP, Python, JavaScript...) :
+            // on le lance directement, sans compiler un projet .NET
+            var activePath = GetActivePath();
+            if (activePath is not null && File.Exists(activePath)
+                && RunnerCatalog.ForFile(activePath) is { } runner && runner.Language != "C#")
+            {
+                await RunActiveFileAsync(activePath, execution, files, editor);
+                return;
+            }
+
             if (!execution.IsSdkAvailable())
             {
                 MessageBox.Show(_window,
@@ -257,6 +268,29 @@ namespace IdeCSharp.UI
 
                 _window.SetStatus("Exécution en cours…");
                 await execution.RunAsync(CurrentFolder, _runCts.Token);
+                _window.SetStatus("Programme terminé.");
+            }
+            finally
+            {
+                _runCts.Dispose();
+                _runCts = null;
+            }
+        }
+
+                private async Task RunActiveFileAsync(string path, IExecutionService execution,
+            IFileService files, IEditorService editor)
+        {
+            _runCts = new CancellationTokenSource();
+            try
+            {
+                // On enregistre ce qui est modifié pour lancer la dernière version
+                foreach (var modified in editor.GetModifiedDocuments())
+                {
+                    await files.SaveFileAsync(modified, editor.GetText(modified));
+                }
+
+                _window.SetStatus($"Exécution de {Path.GetFileName(path)}…");
+                await execution.RunAsync(path, _runCts.Token);
                 _window.SetStatus("Programme terminé.");
             }
             finally
