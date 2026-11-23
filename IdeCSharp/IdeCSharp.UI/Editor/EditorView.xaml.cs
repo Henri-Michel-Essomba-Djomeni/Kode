@@ -365,45 +365,66 @@ public partial class EditorView : UserControl
     // En-tête d'onglet avec bouton de fermeture
     // ----------------------------------------------------------------
 
-    private object CreateTabHeader(string fullPath, TabItem tab, DocumentView documentView)
+        private object CreateTabHeader(string fullPath, TabItem tab, DocumentView documentView)
     {
         string fileName = Path.GetFileName(fullPath);
 
+        // Nom du fichier, coupé par « … » s'il est trop long
         var textBlock = new TextBlock
         {
-            Text = documentView.IsModified ? $"{fileName} *" : fileName,
-            VerticalAlignment = VerticalAlignment.Center
+            Text = fileName,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            MaxWidth = 150,
+            Margin = new Thickness(7, 0, 0, 0)
         };
-        textBlock.SetResourceReference(TextBlock.ForegroundProperty, "PanelForegroundBrush");
 
-        // Met à jour l'en-tête (ajout/retrait de l'astérisque) en fonction des modifications
+        // Point d'accent : remplace l'astérisque quand le fichier est modifié
+        var modifiedDot = new System.Windows.Shapes.Ellipse
+        {
+            Width = 8,
+            Height = 8,
+            Margin = new Thickness(8, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Visibility = documentView.IsModified ? Visibility.Visible : Visibility.Collapsed
+        };
+        modifiedDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "AccentBrush");
+
+        // Met à jour le point quand le fichier devient modifié ou enregistré
         EventHandler modifiedHandler = (_, _) =>
         {
-            textBlock.Text = documentView.IsModified ? $"{fileName} *" : fileName;
+            modifiedDot.Visibility = documentView.IsModified ? Visibility.Visible : Visibility.Collapsed;
         };
         documentView.ModifiedChanged += modifiedHandler;
         _modifiedHandlers[tab] = modifiedHandler;
 
         var closeButton = new Button
         {
-            Content = "✕",
-            FontSize = 10,
-            Padding = new Thickness(2, 0, 2, 0),
-            Margin = new Thickness(6, 0, 0, 0),
+            Margin = new Thickness(4, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center,
-            Background = System.Windows.Media.Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            Cursor = System.Windows.Input.Cursors.Hand
+            ToolTip = "Fermer"
         };
-        closeButton.SetResourceReference(ForegroundProperty, "MutedForegroundBrush");
+        closeButton.SetResourceReference(FrameworkElement.StyleProperty, "TabCloseButtonStyle");
         closeButton.Click += (_, _) =>
         {
             string path = (string)tab.Tag;
             Service.CloseDocument(path);
         };
 
+        // Clic molette sur l'onglet = fermer, comme dans VS Code
+        tab.MouseDown += (_, e) =>
+        {
+            if (e.ChangedButton == System.Windows.Input.MouseButton.Middle)
+            {
+                e.Handled = true;
+                Service.CloseDocument((string)tab.Tag);
+            }
+        };
+
         var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        panel.Children.Add(FileTypeBadge.Create(fullPath));
         panel.Children.Add(textBlock);
+        panel.Children.Add(modifiedDot);
         panel.Children.Add(closeButton);
         return panel;
     }
@@ -417,6 +438,8 @@ public partial class EditorView : UserControl
         if (e.Source == TabDocuments)
         {
             Service.NotifyActiveTabChanged();
+            Dispatcher.BeginInvoke(() => ActiveTab?.BringIntoView(),
+                System.Windows.Threading.DispatcherPriority.Loaded);
             DeferFocusToActiveDocument();
 
             if (FindBar.Visibility == Visibility.Visible)

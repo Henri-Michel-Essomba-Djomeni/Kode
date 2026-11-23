@@ -20,6 +20,12 @@ partial class MainWindow
         SetEditorContent(_editorView);
         Router.Editor = _editorService;
 
+        // Le routeur doit connaître le fichier actif (Exécuter, Enregistrer, assistant...)
+        Router.GetActivePath = () => _editorService.ActiveDocumentPath;
+
+        // Après chaque enregistrement fait par le routeur, l'onglet perd son point « modifié »
+        Router.DocumentSaved = path => _editorService.MarkAsSaved(path);
+
         // Enregistrement quand on ferme un onglet modifié et qu'on répond « Oui »
         _editorService.SaveHandler = path =>
         {
@@ -55,12 +61,5 @@ partial class MainWindow
                     EditorOverview.SetText(string.Empty);
                 }
             });
-
-        // Clic dans l'aperçu : on place le curseur dans le fichier actif
-        EditorOverview.LineRequested += line =>
-        {
-            var path = _editorService.ActiveDocumentPath;
-            if (path is not null) _editorService.GoToLine(path, line);
-        };
     }
 }
