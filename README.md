@@ -39,7 +39,8 @@ Un installateur (Inno Setup) est disponible dans le dossier Installateur.
    en bas du panneau, puis cliquer sur Envoyer.
 6. *Arrêter* : Maj+F5, ou le menu Exécuter.
 7. *Erreurs* : une erreur de compilation s'affiche sous la forme
-   Program.cs(ligne,colonne): error CSxxxx.
+   Program.cs(ligne,colonne): error CSxxxx. Double-clique sur cette ligne :
+   le fichier s'ouvre dans l'éditeur, curseur à la ligne de l'erreur.
 
 ## Autres langages
 Pour les langages hors C#, l'outil correspondant (Node, gcc, etc.) doit être installé :
@@ -49,5 +50,4 @@ sinon le panneau SORTIE affiche un message d'installation.
 - Un script Node qui lit la saisie reste ouvert tant que l'entrée n'est pas fermée
   (terminer le script par process.exit()).
 - Panneau SORTIE en texte seul, sans couleurs par type de ligne.
-- Les erreurs de compilation ne sont pas encore cliquables.
 - Python non testé sur la machine de développement.
