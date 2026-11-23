@@ -26,4 +26,10 @@
     <SolidColorBrush x:Key="SyntaxNumberBrush" Color="#C2410C"/>
     <SolidColorBrush x:Key="SyntaxCommentBrush" Color="#8A879E"/>
 
+    <!-- Terminal -->
+    <SolidColorBrush x:Key="TerminalBackgroundBrush" Color="#F4F3F9"/>
+    <SolidColorBrush x:Key="TerminalForegroundBrush" Color="#2B2A3A"/>
+    <SolidColorBrush x:Key="TerminalPromptBrush" Color="#7C3AED"/>
+    <SolidColorBrush x:Key="TerminalErrorBrush" Color="#DC2626"/>
+
 </ResourceDictionary>

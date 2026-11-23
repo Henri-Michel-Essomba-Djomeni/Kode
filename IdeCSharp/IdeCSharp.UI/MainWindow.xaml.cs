@@ -43,6 +43,9 @@ namespace IdeCSharp.UI
             // ou dans le dossier utilisateur si aucun dossier n'est ouvert.
             _bottomTabs.TerminalPane.Attach(_terminal, () => Router.CurrentFolder);
 
+            // Quand on ouvre un dossier, la console déjà lancée se déplace dedans
+            Router.FolderOpened += folder => _bottomTabs.TerminalPane.OnFolderOpened(folder);
+
             // On ferme proprement la console quand la fenêtre se ferme
             Closed += (_, _) => _terminal.Dispose();
             InitExecutionModule();
