@@ -28,6 +28,9 @@ public partial class EditorView : UserControl
     /// </summary>
     public EditorService Service { get; }
 
+    /// <summary>Écran d'accueil affiché quand aucun onglet n'est ouvert.</summary>
+    public WelcomeView Welcome => EmptyMessage;
+
     /// <summary>
     /// Initialise le conteneur d'onglets et crée le service associé.
     /// </summary>

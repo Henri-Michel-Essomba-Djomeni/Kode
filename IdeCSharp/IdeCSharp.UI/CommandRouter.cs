@@ -30,6 +30,34 @@ namespace IdeCSharp.UI
 
         /// <summary>Appelé après un enregistrement : l'éditeur retire l'indicateur « modifié » de l'onglet.</summary>
         public Action<string>? DocumentSaved { get; set; }
+                /// <summary>Service des fichiers et dossiers récents (module de Raïssa).</summary>
+        public IRecentItemsService? Recents { get; set; }
+
+        /// <summary>Levé quand la liste des récents change : l'accueil se met à jour.</summary>
+        public event Action? RecentsChanged;
+
+        // Encodage d'origine de chaque fichier ouvert, pour le réécrire à l'identique
+        private readonly Dictionary<string, string> _encodings = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Encodage du fichier (UTF-8 par défaut), pour la barre d'état.</summary>
+        public string EncodingFor(string? path) =>
+            path is not null && _encodings.TryGetValue(Path.GetFullPath(path), out var name) ? name : "UTF-8";
+
+        /// <summary>Vide la liste des récents.</summary>
+        public void ClearRecents()
+        {
+            Recents?.Clear();
+            RecentsChanged?.Invoke();
+        }
+
+        // Enregistre avec l'encodage d'origine du fichier s'il est connu
+        private async Task SaveDocumentAsync(IFileService files, string path, string text)
+        {
+            if (files is IFileEncodingService enc && _encodings.TryGetValue(Path.GetFullPath(path), out var name))
+                await enc.SaveFileWithEncodingAsync(path, text, name);
+            else
+                await files.SaveFileAsync(path, text);
+        }
 
         /// <summary>Dossier de projet actuellement ouvert.</summary>
         public string? CurrentFolder { get; private set; }
@@ -139,25 +167,48 @@ namespace IdeCSharp.UI
             if (files is null) { Missing("Fichiers"); return; }
             if (editor is null) { Missing("Éditeur"); return; }
 
-            // Progress<T> met à jour la barre d'état depuis le bon thread
+                        // Progress<T> met à jour la barre d'état depuis le bon thread
             var progress = new Progress<double>(p => _window.SetStatus($"Chargement… {p:P0}"));
-            var content = await files.ReadFileAsync(path, progress);
+
+            // Avec le service d'encodage, on connaît l'encodage réel du fichier
+            string content;
+            if (files is IFileEncodingService enc)
+            {
+                var result = await enc.ReadFileWithEncodingAsync(path, progress);
+                content = result.Content;
+                _encodings[Path.GetFullPath(path)] = result.EncodingName;
+            }
+            else
+            {
+                content = await files.ReadFileAsync(path, progress);
+            }
 
             editor.OpenDocument(path, content);
             _window.EditorOverview.SetText(content);
             _window.SetLanguage(LanguageFor(path));
+            _window.SetEncoding(EncodingFor(path));
+            Recents?.AddFile(path);
+            RecentsChanged?.Invoke();
             _window.SetStatus($"Ouvert : {Path.GetFileName(path)}");
         }
 
-        private void OpenFolder()
+                private void OpenFolder()
         {
             var dialog = new OpenFolderDialog { Title = "Ouvrir un dossier de projet" };
             if (dialog.ShowDialog(_window) != true) return;
 
-            CurrentFolder = dialog.FolderName;
-            FolderOpened?.Invoke(CurrentFolder);
-            _window.SetBranch(GitInfo.GetBranch(CurrentFolder));
-            _window.SetStatus($"Dossier ouvert : {CurrentFolder}");
+            OpenFolderPath(dialog.FolderName);
+        }
+
+        /// <summary>Ouvre un dossier de projet (boîte de dialogue ou dossier récent).</summary>
+        public void OpenFolderPath(string path)
+        {
+            CurrentFolder = path;
+            FolderOpened?.Invoke(path);
+            _window.SetBranch(GitInfo.GetBranch(path));
+            _window.SetStatus($"Dossier ouvert : {path}");
+            Recents?.AddFolder(path);
+            RecentsChanged?.Invoke();
         }
 
         private async Task SaveAsync()
@@ -177,7 +228,7 @@ namespace IdeCSharp.UI
                 _window.SetStatus($"Enregistré : {Path.GetFileName(path)}");
             }
 
-            await files.SaveFileAsync(path, editor.GetText(path));
+            await SaveDocumentAsync(files, path, editor.GetText(path));
             _window.SetStatus($"Enregistré : {Path.GetFileName(path)}");
         }
 
@@ -204,7 +255,14 @@ namespace IdeCSharp.UI
             if (dialog.ShowDialog(_window) != true) return;
 
             var text = editor.GetText(path);
-            await files.SaveFileAsync(dialog.FileName, text);
+
+            // La copie garde l'encodage de l'original
+            if (_encodings.TryGetValue(Path.GetFullPath(path), out var originalEncoding))
+                _encodings[Path.GetFullPath(dialog.FileName)] = originalEncoding;
+
+            await SaveDocumentAsync(files, dialog.FileName, text);
+            Recents?.AddFile(dialog.FileName);
+            RecentsChanged?.Invoke();
 
             // La copie s'ouvre dans son propre onglet ; l'ancien onglet reste tel quel
             editor.OpenDocument(dialog.FileName, text);
@@ -261,7 +319,7 @@ namespace IdeCSharp.UI
                 // On enregistre tout ce qui est modifié pour compiler la dernière version
                 foreach (var path in editor.GetModifiedDocuments())
                 {
-                    await files.SaveFileAsync(path, editor.GetText(path));
+                    await SaveDocumentAsync(files, path, editor.GetText(path));
                     DocumentSaved?.Invoke(path);
                 }
 
@@ -293,7 +351,7 @@ namespace IdeCSharp.UI
                 // On enregistre ce qui est modifié pour lancer la dernière version
                 foreach (var modified in editor.GetModifiedDocuments())
                 {
-                    await files.SaveFileAsync(modified, editor.GetText(modified));
+                    await SaveDocumentAsync(files, modified, editor.GetText(modified));
                     DocumentSaved?.Invoke(modified);
                 }
 

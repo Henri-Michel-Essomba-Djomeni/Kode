@@ -1,7 +1,9 @@
 using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using IdeCSharp.Core.Services;
+using System.Windows.Controls;
 
 namespace IdeCSharp.UI
 {
@@ -34,6 +36,7 @@ namespace IdeCSharp.UI
         {
             InitializeComponent();
             Router = new CommandRouter(this);
+            Router.Recents = new RecentItemsService();
             _ = new FileExplorer(this, new FileService());
 
             // On place les onglets SORTIE / TERMINAL dans le panneau du bas
@@ -267,6 +270,54 @@ namespace IdeCSharp.UI
                 BottomSplitter.Visibility = Visibility.Visible;
                 BottomPanelRow.MinHeight = 80;
                 BottomPanelRow.Height = new GridLength(_bottomPanelHeight);
+            }
+        }
+
+                // Menu « Ouvrir un récent » : reconstruit à chaque ouverture du sous-menu
+        private void OnRecentMenuOpened(object sender, RoutedEventArgs e)
+        {
+            if (!ReferenceEquals(e.OriginalSource, RecentMenu)) return;
+
+            RecentMenu.Items.Clear();
+            var recents = Router.Recents;
+            var folders = recents?.GetRecentFolders().ToList() ?? new List<string>();
+            var files = recents?.GetRecentFiles().ToList() ?? new List<string>();
+
+            if (folders.Count == 0 && files.Count == 0)
+            {
+                RecentMenu.Items.Add(new MenuItem { Header = "(aucun élément récent)", IsEnabled = false });
+                return;
+            }
+
+            foreach (var folder in folders) RecentMenu.Items.Add(CreateRecentItem(folder));
+            if (folders.Count > 0 && files.Count > 0) RecentMenu.Items.Add(new Separator());
+            foreach (var file in files) RecentMenu.Items.Add(CreateRecentItem(file));
+
+            RecentMenu.Items.Add(new Separator());
+            var clear = new MenuItem { Header = "Effacer les récents" };
+            clear.Click += (_, _) => Router.ClearRecents();
+            RecentMenu.Items.Add(clear);
+        }
+
+        private MenuItem CreateRecentItem(string path)
+        {
+            // Le « _ » est une touche d'accès dans un menu : on le double pour l'afficher
+            var item = new MenuItem { Header = path.Replace("_", "__"), ToolTip = path };
+            item.Click += (_, _) => OpenRecent(path);
+            return item;
+        }
+
+        // Un récent peut être un dossier ou un fichier
+        private async void OpenRecent(string path)
+        {
+            try
+            {
+                if (Directory.Exists(path)) Router.OpenFolderPath(path);
+                else await Router.OpenPathAsync(path);
+            }
+            catch (Exception ex)
+            {
+                SetStatus($"Erreur : {ex.Message}");
             }
         }
 
