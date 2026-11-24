@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Input;
 using IdeCSharp.Core.Services;
 using System.Windows.Controls;
+using IdeCSharp.Core.Accounts;
 
 namespace IdeCSharp.UI
 {
@@ -56,6 +57,7 @@ namespace IdeCSharp.UI
             // Barre de titre sombre ou claire selon le thème
             SourceInitialized += (_, _) => WindowStyler.SetDarkTitleBar(this, ThemeManager.IsDark);
             ThemeManager.ThemeChanged += dark => WindowStyler.SetDarkTitleBar(this, dark);
+            UpdateAccountButton();
         }
 
         // ------------------------------------------------------------------
@@ -172,6 +174,22 @@ namespace IdeCSharp.UI
         {
             ThemeManager.Apply(ThemeManager.IsDark ? AppTheme.Light : AppTheme.Dark);
             SetStatus(ThemeManager.IsDark ? "Thème sombre" : "Thème clair");
+        }
+
+                // Bouton « compte » : ouvre la fenêtre de connexion GitHub
+        private void OnAccountButtonClick(object sender, RoutedEventArgs e)
+        {
+            new AccountWindow { Owner = this }.ShowDialog();
+            UpdateAccountButton();
+        }
+
+        // Le bouton indique qui est connecté
+        private void UpdateAccountButton()
+        {
+            var account = GitHubAuthService.LoadSaved();
+            AccountButton.ToolTip = account is null
+                ? "Se connecter (GitHub)"
+                : $"Connecté : {account.Login}";
         }
 
         // ------------------------------------------------------------------

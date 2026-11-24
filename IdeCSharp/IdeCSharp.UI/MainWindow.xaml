@@ -156,6 +156,11 @@
                                 ToolTip="Paramètres (Ctrl+,)"
                                 Click="OnSettingsButtonClick"/>
                     </Grid>
+                        <Button x:Name="AccountButton" DockPanel.Dock="Bottom"
+                            Style="{StaticResource ActivityButtonStyle}"
+                            Tag="{StaticResource IconAccount}"
+                            ToolTip="Se connecter (GitHub)"
+                            Click="OnAccountButtonClick"/>
                 </DockPanel>
             </Border>
 
