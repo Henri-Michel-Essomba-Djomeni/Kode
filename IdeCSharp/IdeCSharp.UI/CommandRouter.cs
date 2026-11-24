@@ -223,16 +223,15 @@ namespace IdeCSharp.UI
             {
                 _window.SetStatus("Aucun document à enregistrer.");
                 return;
-                await files.SaveFileAsync(path, editor.GetText(path));
-                DocumentSaved?.Invoke(path);
-                _window.SetStatus($"Enregistré : {Path.GetFileName(path)}");
             }
 
+            // On enregistre avec l'encodage d'origine, puis l'onglet perd son point « modifié »
             await SaveDocumentAsync(files, path, editor.GetText(path));
+            DocumentSaved?.Invoke(path);
             _window.SetStatus($"Enregistré : {Path.GetFileName(path)}");
         }
 
-        private async Task SaveAsAsync()
+                private async Task SaveAsAsync()
         {
             var files = Files;
             var editor = Editor;
