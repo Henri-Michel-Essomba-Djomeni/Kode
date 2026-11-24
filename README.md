@@ -43,11 +43,14 @@ Un installateur (Inno Setup) est disponible dans le dossier Installateur.
    le fichier s'ouvre dans l'éditeur, curseur à la ligne de l'erreur.
 
 ## Autres langages
-Pour les langages hors C#, l'outil correspondant (Node, gcc, etc.) doit être installé :
-sinon le panneau SORTIE affiche un message d'installation.
+Pour exécuter un fichier hors C# (JavaScript, Python, C, etc.), ouvre-le dans
+l'éditeur (double-clic dans l'explorateur) puis appuie sur F5.
+L'outil correspondant (Node, Python, gcc, etc.) doit être installé et accessible
+dans le PATH : sinon le panneau SORTIE affiche un message d'installation.
+Testés : JavaScript, Python, C (message d'installation).
+Pour Python, installe-le depuis python.org en cochant « Add python.exe to PATH ».
 
 ## Limites connues
 - Un script Node qui lit la saisie reste ouvert tant que l'entrée n'est pas fermée
   (terminer le script par process.exit()).
 - Panneau SORTIE en texte seul, sans couleurs par type de ligne.
-- Python non testé sur la machine de développement.
