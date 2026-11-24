@@ -22,7 +22,7 @@ public partial class OutputPanel : UserControl
     private int _chars;
 
     private static readonly Regex ErrorLineRegex = new(
-        @"^(?<file>[^\s(][^(])\((?<line>\d+),(?<col>\d+)\):\s(error|warning)\b",
+        @"^(?<file>.+?)\((?<line>\d+),(?<col>\d+)\):\s*(?:error|warning)\b",
         RegexOptions.Compiled);
     private string? _projectDir;
 
@@ -93,10 +93,14 @@ public partial class OutputPanel : UserControl
         int end = all.IndexOf('\n', index);
         if (end < 0) end = all.Length;
 
-        var m = ErrorLineRegex.Match(all[start..end].Trim());
+        string line = all[start..end].Trim();
+
+        var m = ErrorLineRegex.Match(line);
+        
         if (!m.Success) return;
 
         string? path = ResolveFile(m.Groups["file"].Value);
+        
         if (path == null) return;
 
         ErrorActivated?.Invoke(path, int.Parse(m.Groups["line"].Value), int.Parse(m.Groups["col"].Value));
@@ -107,6 +111,8 @@ public partial class OutputPanel : UserControl
     {
         if (Path.IsPathRooted(name) && File.Exists(name)) return name;
         if (_projectDir == null || !Directory.Exists(_projectDir)) return null;
+        string direct = Path.GetFullPath(Path.Combine(_projectDir, name));
+        if (File.Exists(direct)) return direct;
 
         return Directory.EnumerateFiles(_projectDir, Path.GetFileName(name), SearchOption.AllDirectories)
             .FirstOrDefault(f => !f.Contains(@"\obj\") && !f.Contains(@"\bin\"));
