@@ -67,6 +67,10 @@ partial class MainWindow
         _editorView.Welcome.RecentRequested += OpenRecent;
         Router.RecentsChanged += RefreshWelcomeRecents;
         RefreshWelcomeRecents();
+
+        // Double-clic sur une erreur dans SORTIE : ouvre le fichier à la bonne ligne
+        if (_outputPanel is not null)
+            _outputPanel.ErrorActivated += OnErrorActivated;
     }
 
     // Remet à jour la liste des récents de l'accueil (dossiers d'abord, puis fichiers)
@@ -76,5 +80,22 @@ partial class MainWindow
         if (recents is null || _editorView is null) return;
 
         _editorView.Welcome.SetRecents(recents.GetRecentFolders().Concat(recents.GetRecentFiles()));
+    }
+
+    // Erreur de compilation cliquée dans SORTIE : on ouvre le fichier puis on place le curseur
+    private async void OnErrorActivated(string path, int line, int column)
+    {
+        try
+        {
+            await Router.OpenPathAsync(path);
+
+            // On laisse l'éditeur finir de se mettre en place avant de placer le curseur
+            _ = Dispatcher.BeginInvoke(DispatcherPriority.Background,
+                () => _editorService?.GoToLine(path, line, column));
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Erreur : {ex.Message}");
+        }
     }
 }
