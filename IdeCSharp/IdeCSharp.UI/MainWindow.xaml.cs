@@ -181,6 +181,7 @@ namespace IdeCSharp.UI
         {
             new AccountWindow { Owner = this }.ShowDialog();
             UpdateAccountButton();
+            RefreshWelcomeAccount();
         }
 
         // Le bouton indique qui est connecté

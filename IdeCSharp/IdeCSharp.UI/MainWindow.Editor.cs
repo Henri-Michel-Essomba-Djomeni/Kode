@@ -67,11 +67,17 @@ partial class MainWindow
         _editorView.Welcome.RecentRequested += OpenRecent;
         Router.RecentsChanged += RefreshWelcomeRecents;
         RefreshWelcomeRecents();
+        RefreshWelcomeAccount();
+        _editorView.Welcome.CloneRequested += OnCloneRepository;
 
         // Double-clic sur une erreur dans SORTIE : ouvre le fichier à la bonne ligne
         if (_outputPanel is not null)
             _outputPanel.ErrorActivated += OnErrorActivated;
     }
+
+    // Salutation de l'accueil : suit le compte GitHub connecté
+    private void RefreshWelcomeAccount() =>
+        _editorView?.Welcome.SetAccount(IdeCSharp.Core.Accounts.GitHubAuthService.LoadSaved());
 
     // Remet à jour la liste des récents de l'accueil (dossiers d'abord, puis fichiers)
     private void RefreshWelcomeRecents()

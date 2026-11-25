@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
+using IdeCSharp.Core.Accounts;
 
 namespace IdeCSharp.UI;
 
@@ -17,6 +19,30 @@ public partial class WelcomeView : UserControl
 
     /// <summary>Levé quand l'utilisateur clique sur un élément récent (fichier ou dossier).</summary>
     public event Action<string>? RecentRequested;
+
+    /// <summary>Levé quand l'utilisateur clique sur « Cloner un dépôt GitHub ».</summary>
+    public event Action? CloneRequested;
+
+    private void OnCloneClick(object sender, RoutedEventArgs e) => CloneRequested?.Invoke();
+
+    /// <summary>Affiche la salutation et l'avatar du compte GitHub connecté (null : masqués).</summary>
+    public void SetAccount(GitHubAccount? account)
+    {
+        GreetingPanel.Visibility = account is null ? Visibility.Collapsed : Visibility.Visible;
+        if (account is null) return;
+
+        // Prénom = premier mot du nom complet, sinon le pseudo
+        string name = string.IsNullOrWhiteSpace(account.Name)
+            ? account.Login
+            : account.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
+        GreetingText.Text = $"Bonjour, {name}";
+
+        if (!string.IsNullOrEmpty(account.AvatarUrl))
+        {
+            try { GreetingAvatar.ImageSource = new BitmapImage(new Uri(account.AvatarUrl)); }
+            catch { /* pas d'avatar : le cercle reste vide */ }
+        }
+    }
 
     /// <summary>Affiche les éléments récents (6 au maximum). Une liste vide masque la section.</summary>
     public void SetRecents(IEnumerable<string> paths)

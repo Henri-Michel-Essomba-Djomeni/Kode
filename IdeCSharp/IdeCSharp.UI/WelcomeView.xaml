@@ -11,10 +11,23 @@
                        HorizontalAlignment="Center" Margin="0,12,0,0"
                        Foreground="{DynamicResource PanelForegroundBrush}"/>
             <TextBlock Text="Un IDE simple, fluide et intuitif"
-                       HorizontalAlignment="Center" Margin="0,4,0,26"
+                       HorizontalAlignment="Center" Margin="0,4,0,0"
                        Foreground="{DynamicResource MutedForegroundBrush}"/>
 
-            <TextBlock Text="DÉMARRER" FontSize="11" FontWeight="SemiBold" Margin="2,0,0,8"
+            <!-- Salutation : visible seulement quand un compte GitHub est connecté -->
+            <StackPanel x:Name="GreetingPanel" Orientation="Horizontal" HorizontalAlignment="Center"
+                        Margin="0,14,0,0" Visibility="Collapsed">
+                <Ellipse Width="26" Height="26" Margin="0,0,10,0"
+                         Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.5">
+                    <Ellipse.Fill>
+                        <ImageBrush x:Name="GreetingAvatar" Stretch="UniformToFill"/>
+                    </Ellipse.Fill>
+                </Ellipse>
+                <TextBlock x:Name="GreetingText" VerticalAlignment="Center"
+                           Foreground="{DynamicResource PanelForegroundBrush}"/>
+            </StackPanel>
+
+            <TextBlock Text="DÉMARRER" FontSize="11" FontWeight="SemiBold" Margin="2,26,0,8"
                        Foreground="{DynamicResource MutedForegroundBrush}"/>
 
             <!-- Carte : ouvrir un dossier -->
@@ -108,6 +121,37 @@
                     <Border Grid.Column="2" Padding="8,2" CornerRadius="4" VerticalAlignment="Center"
                             Background="{DynamicResource ActivityBarBackgroundBrush}">
                         <TextBlock Text="Ctrl+Maj+X" FontSize="11"
+                                   Foreground="{DynamicResource MutedForegroundBrush}"/>
+                    </Border>
+                </Grid>
+            </Button>
+
+                        <!-- Carte : cloner un dépôt GitHub -->
+            <Button Style="{StaticResource WelcomeCardStyle}" Click="OnCloneClick">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Width="38" Height="38" CornerRadius="9" Margin="0,0,14,0"
+                            Background="{DynamicResource ActivityBarBackgroundBrush}">
+                        <Viewbox Width="20" Height="20">
+                            <Path Data="{StaticResource IconClone}" Stroke="{DynamicResource AccentBrush}"
+                                  StrokeThickness="1.8" StrokeLineJoin="Round"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Width="24" Height="24" Stretch="None"/>
+                        </Viewbox>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Cloner un dépôt GitHub" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PanelForegroundBrush}"/>
+                        <TextBlock Text="Récupérer un projet depuis ton compte" FontSize="12" Margin="0,2,0,0"
+                                   Foreground="{DynamicResource MutedForegroundBrush}"/>
+                    </StackPanel>
+                    <Border Grid.Column="2" Padding="8,2" CornerRadius="4" VerticalAlignment="Center"
+                            Background="{DynamicResource ActivityBarBackgroundBrush}">
+                        <TextBlock Text="Git" FontSize="11"
                                    Foreground="{DynamicResource MutedForegroundBrush}"/>
                     </Border>
                 </Grid>

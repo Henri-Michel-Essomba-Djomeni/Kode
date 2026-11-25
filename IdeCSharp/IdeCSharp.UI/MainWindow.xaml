@@ -54,6 +54,7 @@
                 <MenuItem x:Name="RecentMenu" Header="Ouvrir un _récent" SubmenuOpened="OnRecentMenuOpened">
                     <MenuItem Header="(chargement…)" IsEnabled="False"/>
                 </MenuItem>
+                <MenuItem Header="Cloner un dépôt _GitHub…" Click="OnCloneMenuClick"/>
                 <Separator/>
                 <MenuItem Command="ApplicationCommands.Save" Header="_Enregistrer"/>
                 <MenuItem Command="{x:Static local:AppCommands.SaveAs}"/>
@@ -78,6 +79,9 @@
                 <MenuItem Command="{x:Static local:AppCommands.ShowExtensions}"/>
                 <MenuItem Command="{x:Static local:AppCommands.ShowSettings}"/>
                 <MenuItem Command="{x:Static local:AppCommands.ToggleRightPanel}"/>
+                <Separator/>
+                <MenuItem Header="_Palette de commandes" InputGestureText="Ctrl+Maj+P" Click="OnPaletteMenuClick"/>
+                <MenuItem Header="_Aller au fichier…" InputGestureText="Ctrl+P" Click="OnQuickOpenMenuClick"/>
                 <Separator/>
                 <MenuItem Header="_Thème">
                     <MenuItem Header="_Clair" Command="{x:Static local:AppCommands.SetTheme}" CommandParameter="Light"/>
