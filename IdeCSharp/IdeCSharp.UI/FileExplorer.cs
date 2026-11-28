@@ -35,7 +35,7 @@ namespace IdeCSharp.UI
             _files = files;
 
             _tree = new TreeView { BorderThickness = new Thickness(0), Background = Brushes.Transparent };
-            _tree.MouseDoubleClick += OnDoubleClick;
+            _tree.PreviewMouseLeftButtonUp += OnClick;  // un seul clic ouvre le fichier, comme dans VS Code
             _tree.PreviewMouseRightButtonDown += OnRightClick;
             _tree.ContextMenu = BuildContextMenu();
 
@@ -217,13 +217,14 @@ namespace IdeCSharp.UI
         }
 
         // ------------------------------------------------------------------
-        // Double-clic : ouvre le fichier dans l'éditeur (via le routeur)
+        // Clic : ouvre le fichier dans l'éditeur (via le routeur)
         // ------------------------------------------------------------------
 
         // async void est acceptable ici : c'est un gestionnaire d'événement, avec try/catch.
-        private async void OnDoubleClick(object sender, MouseButtonEventArgs e)
+        private async void OnClick(object sender, MouseButtonEventArgs e)
         {
-            if (SelectedItem is not { Tag: FileNode { IsDirectory: false } file } item) return; // un dossier se déplie tout seul
+            // Un dossier se déplie tout seul : on ne s'occupe que des fichiers
+            if (SelectedItem is not { Tag: FileNode { IsDirectory: false } file } item) return;
             if (!ReferenceEquals(FindTreeViewItem(e.OriginalSource as DependencyObject), item)) return; // clic dans le vide
 
             try

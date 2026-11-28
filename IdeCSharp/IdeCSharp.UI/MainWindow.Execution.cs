@@ -24,7 +24,7 @@ partial class MainWindow
         // _ = _executionService.RunAsync(@"C:\dev\IDE-tests\Hello");
     }
     // Double-clic sur une erreur du panneau Sortie : ouvre le fichier et place le curseur (T44).
-    private void OnErrorActivated(string path, int line, int column)
+    /*private void OnErrorActivated(string path, int line, int column)
     {
         var editor = Router.Editor;
         if (editor == null) return;   // l'éditeur n'est pas encore branché
@@ -36,5 +36,6 @@ partial class MainWindow
         }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
-    }
+    }*/ 
+    
 }

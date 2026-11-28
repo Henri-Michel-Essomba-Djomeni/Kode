@@ -2,19 +2,33 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:IdeCSharp.UI">
-    <!-- Le Viewbox réduit tout si la zone devient trop petite, sans jamais agrandir -->
-    <Viewbox StretchDirection="DownOnly" Margin="24">
-        <StackPanel Width="420" VerticalAlignment="Center">
+    <!-- Si la zone est trop petite, on fait défiler au lieu de réduire le texte -->
+    <ScrollViewer x:Name="WelcomeScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid MinHeight="{Binding ViewportHeight, ElementName=WelcomeScroll}">
+        <StackPanel MaxWidth="440" Margin="24" VerticalAlignment="Center">
 
             <Image Source="{StaticResource KodeIconImage}" Width="88" Height="88"/>
             <TextBlock Text="Kode" FontSize="34" FontWeight="SemiBold"
                        HorizontalAlignment="Center" Margin="0,12,0,0"
                        Foreground="{DynamicResource PanelForegroundBrush}"/>
             <TextBlock Text="Un IDE simple, fluide et intuitif"
-                       HorizontalAlignment="Center" Margin="0,4,0,26"
+                       HorizontalAlignment="Center" Margin="0,4,0,0"
                        Foreground="{DynamicResource MutedForegroundBrush}"/>
 
-            <TextBlock Text="DÉMARRER" FontSize="11" FontWeight="SemiBold" Margin="2,0,0,8"
+            <!-- Salutation : visible seulement quand un compte GitHub est connecté -->
+            <StackPanel x:Name="GreetingPanel" Orientation="Horizontal" HorizontalAlignment="Center"
+                        Margin="0,14,0,0" Visibility="Collapsed">
+                <Ellipse Width="26" Height="26" Margin="0,0,10,0"
+                         Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.5">
+                    <Ellipse.Fill>
+                        <ImageBrush x:Name="GreetingAvatar" Stretch="UniformToFill"/>
+                    </Ellipse.Fill>
+                </Ellipse>
+                <TextBlock x:Name="GreetingText" VerticalAlignment="Center"
+                           Foreground="{DynamicResource PanelForegroundBrush}"/>
+            </StackPanel>
+
+            <TextBlock Text="DÉMARRER" FontSize="12" FontWeight="SemiBold" Margin="2,26,0,8"
                        Foreground="{DynamicResource MutedForegroundBrush}"/>
 
             <!-- Carte : ouvrir un dossier -->
@@ -36,14 +50,14 @@
                         </Viewbox>
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Ouvrir un dossier" FontWeight="SemiBold"
+                        <TextBlock Text="Ouvrir un dossier" FontWeight="SemiBold" FontSize="14"
                                    Foreground="{DynamicResource PanelForegroundBrush}"/>
-                        <TextBlock Text="Parcourir un projet existant" FontSize="12" Margin="0,2,0,0"
+                        <TextBlock Text="Parcourir un projet existant" FontSize="13" Margin="0,2,0,0"
                                    Foreground="{DynamicResource MutedForegroundBrush}"/>
                     </StackPanel>
                     <Border Grid.Column="2" Padding="8,2" CornerRadius="4" VerticalAlignment="Center"
                             Background="{DynamicResource ActivityBarBackgroundBrush}">
-                        <TextBlock Text="Ctrl+Maj+O" FontSize="11"
+                        <TextBlock Text="Ctrl+Maj+O" FontSize="12"
                                    Foreground="{DynamicResource MutedForegroundBrush}"/>
                     </Border>
                 </Grid>
@@ -68,14 +82,14 @@
                         </Viewbox>
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Nouveau fichier" FontWeight="SemiBold"
+                        <TextBlock Text="Nouveau fichier" FontWeight="SemiBold" FontSize="14"
                                    Foreground="{DynamicResource PanelForegroundBrush}"/>
-                        <TextBlock Text="Commencer un fichier vide" FontSize="12" Margin="0,2,0,0"
+                        <TextBlock Text="Commencer un fichier vide" FontSize="13" Margin="0,2,0,0"
                                    Foreground="{DynamicResource MutedForegroundBrush}"/>
                     </StackPanel>
                     <Border Grid.Column="2" Padding="8,2" CornerRadius="4" VerticalAlignment="Center"
                             Background="{DynamicResource ActivityBarBackgroundBrush}">
-                        <TextBlock Text="Ctrl+N" FontSize="11"
+                        <TextBlock Text="Ctrl+N" FontSize="12"
                                    Foreground="{DynamicResource MutedForegroundBrush}"/>
                     </Border>
                 </Grid>
@@ -100,24 +114,56 @@
                         </Viewbox>
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Thèmes et extensions" FontWeight="SemiBold"
+                        <TextBlock Text="Thèmes et extensions" FontWeight="SemiBold" FontSize="14"
                                    Foreground="{DynamicResource PanelForegroundBrush}"/>
-                        <TextBlock Text="Personnaliser les couleurs de Kode" FontSize="12" Margin="0,2,0,0"
+                        <TextBlock Text="Personnaliser les couleurs de Kode" FontSize="13" Margin="0,2,0,0"
                                    Foreground="{DynamicResource MutedForegroundBrush}"/>
                     </StackPanel>
                     <Border Grid.Column="2" Padding="8,2" CornerRadius="4" VerticalAlignment="Center"
                             Background="{DynamicResource ActivityBarBackgroundBrush}">
-                        <TextBlock Text="Ctrl+Maj+X" FontSize="11"
+                        <TextBlock Text="Ctrl+Maj+X" FontSize="12"
+                                   Foreground="{DynamicResource MutedForegroundBrush}"/>
+                    </Border>
+                </Grid>
+            </Button>
+
+                        <!-- Carte : cloner un dépôt GitHub -->
+            <Button Style="{StaticResource WelcomeCardStyle}" Click="OnCloneClick">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Width="38" Height="38" CornerRadius="9" Margin="0,0,14,0"
+                            Background="{DynamicResource ActivityBarBackgroundBrush}">
+                        <Viewbox Width="20" Height="20">
+                            <Path Data="{StaticResource IconClone}" Stroke="{DynamicResource AccentBrush}"
+                                  StrokeThickness="1.8" StrokeLineJoin="Round"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Width="24" Height="24" Stretch="None"/>
+                        </Viewbox>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Cloner un dépôt GitHub" FontWeight="SemiBold" FontSize="14"
+                                   Foreground="{DynamicResource PanelForegroundBrush}"/>
+                        <TextBlock Text="Récupérer un projet depuis ton compte" FontSize="13" Margin="0,2,0,0"
+                                   Foreground="{DynamicResource MutedForegroundBrush}"/>
+                    </StackPanel>
+                    <Border Grid.Column="2" Padding="8,2" CornerRadius="4" VerticalAlignment="Center"
+                            Background="{DynamicResource ActivityBarBackgroundBrush}">
+                        <TextBlock Text="Git" FontSize="12"
                                    Foreground="{DynamicResource MutedForegroundBrush}"/>
                     </Border>
                 </Grid>
             </Button>
 
             <!-- Récents : rempli par le code (SetRecents), masqué s'il n'y en a pas -->
-            <TextBlock x:Name="RecentsTitle" Text="RÉCENTS" FontSize="11" FontWeight="SemiBold"
+            <TextBlock x:Name="RecentsTitle" Text="RÉCENTS" FontSize="12" FontWeight="SemiBold"
                        Margin="2,14,0,8" Visibility="Collapsed"
                        Foreground="{DynamicResource MutedForegroundBrush}"/>
             <StackPanel x:Name="RecentsPanel"/>
         </StackPanel>
-    </Viewbox>
+        </Grid>
+    </ScrollViewer>
 </UserControl>

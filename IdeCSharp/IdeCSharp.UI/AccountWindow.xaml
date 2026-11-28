@@ -1,0 +1,75 @@
+<Window x:Class="IdeCSharp.UI.AccountWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Compte" Width="420" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        FontFamily="{DynamicResource UiFontFamily}" FontSize="{DynamicResource UiFontSize}"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource PanelForegroundBrush}">
+    <StackPanel Margin="28,24">
+
+        <!-- Personne non connectée -->
+        <StackPanel x:Name="SignedOutPanel">
+            <Border Width="64" Height="64" CornerRadius="32" HorizontalAlignment="Center"
+                    Background="{DynamicResource PanelBackgroundBrush}">
+                <Viewbox Width="30" Height="30">
+                    <Path Data="{StaticResource IconAccount}" Stroke="{DynamicResource AccentBrush}"
+                          StrokeThickness="1.6" StrokeLineJoin="Round"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          Width="24" Height="24" Stretch="None"/>
+                </Viewbox>
+            </Border>
+            <TextBlock Text="Connecte-toi à Kode" FontSize="18" FontWeight="SemiBold"
+                       HorizontalAlignment="Center" Margin="0,16,0,6"/>
+            <TextBlock TextWrapping="Wrap" TextAlignment="Center"
+                       Foreground="{DynamicResource MutedForegroundBrush}"
+                       Text="Utilise ton compte GitHub pour retrouver ton identité dans l'IDE. Kode ne reçoit que ton nom public : aucun mot de passe n'est demandé ni enregistré."/>
+            <Button x:Name="SignInButton" Style="{StaticResource AccentButtonStyle}"
+                    Content="Se connecter avec GitHub" Margin="0,20,0,0" Click="OnSignInClick"/>
+        </StackPanel>
+
+        <!-- Attente de la validation sur GitHub -->
+        <StackPanel x:Name="WaitingPanel" Visibility="Collapsed">
+            <TextBlock Text="Valide la connexion sur GitHub" FontSize="18" FontWeight="SemiBold"
+                       HorizontalAlignment="Center"/>
+            <TextBlock TextWrapping="Wrap" Margin="0,14,0,0"
+                       Foreground="{DynamicResource MutedForegroundBrush}"
+                       Text="1. Une page GitHub s'est ouverte dans ton navigateur."/>
+            <TextBlock Margin="0,6,0,8" Foreground="{DynamicResource MutedForegroundBrush}"
+                       Text="2. Saisis ce code, puis valide :"/>
+            <Border CornerRadius="10" Padding="18,12" HorizontalAlignment="Center"
+                    Background="{DynamicResource TerminalBackgroundBrush}">
+                <TextBlock x:Name="CodeText" FontFamily="Consolas" FontSize="30" FontWeight="Bold"
+                           Foreground="{DynamicResource TerminalPromptBrush}"/>
+            </Border>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
+                <Button Content="Copier le code" Padding="12,4" Click="OnCopyClick"/>
+                <Button Content="Rouvrir la page" Padding="12,4" Margin="8,0,0,0" Click="OnReopenClick"/>
+            </StackPanel>
+            <TextBlock Text="En attente de ta validation…" HorizontalAlignment="Center" Margin="0,16,0,0"
+                       Foreground="{DynamicResource MutedForegroundBrush}"/>
+            <Button Content="Annuler" Margin="0,12,0,0" Click="OnCancelClick"/>
+        </StackPanel>
+
+        <!-- Personne connectée -->
+        <StackPanel x:Name="SignedInPanel" Visibility="Collapsed">
+            <Ellipse Width="84" Height="84" HorizontalAlignment="Center"
+                     Stroke="{DynamicResource AccentBrush}" StrokeThickness="2">
+                <Ellipse.Fill>
+                    <ImageBrush x:Name="AvatarBrush" Stretch="UniformToFill"/>
+                </Ellipse.Fill>
+            </Ellipse>
+            <TextBlock x:Name="NameText" FontSize="18" FontWeight="SemiBold"
+                       HorizontalAlignment="Center" Margin="0,14,0,0"/>
+            <TextBlock x:Name="LoginText" HorizontalAlignment="Center"
+                       Foreground="{DynamicResource MutedForegroundBrush}"/>
+            <TextBlock Text="Connecté avec GitHub" FontSize="12" HorizontalAlignment="Center" Margin="0,8,0,0"
+                       Foreground="{DynamicResource AccentBrush}"/>
+            <Button Content="Se déconnecter" Margin="0,20,0,0" Click="OnSignOutClick"/>
+        </StackPanel>
+
+        <!-- Message d'erreur -->
+        <TextBlock x:Name="ErrorText" Visibility="Collapsed" TextWrapping="Wrap" Margin="0,14,0,0"
+                   TextAlignment="Center" Foreground="{DynamicResource TerminalErrorBrush}"/>
+    </StackPanel>
+</Window>

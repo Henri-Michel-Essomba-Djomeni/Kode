@@ -1,0 +1,32 @@
+<Window x:Class="IdeCSharp.UI.AssistantKeyWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Clé API de l'assistant" Width="460" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        FontFamily="{DynamicResource UiFontFamily}" FontSize="{DynamicResource UiFontSize}"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource PanelForegroundBrush}">
+    <StackPanel Margin="24,20">
+        <TextBlock Text="Connecter l'assistant IA" FontSize="18" FontWeight="SemiBold"/>
+        <TextBlock TextWrapping="Wrap" Margin="0,8,0,0"
+                   Foreground="{DynamicResource MutedForegroundBrush}"
+                   Text="Colle ici ta clé Google Gemini (gratuite). Elle reste chiffrée sur cet ordinateur et n'est jamais envoyée ailleurs que chez Google."/>
+        <TextBlock Margin="0,8,0,14">
+            <Hyperlink NavigateUri="https://aistudio.google.com/apikey" RequestNavigate="OnLinkClick">
+                Obtenir une clé gratuite
+            </Hyperlink>
+        </TextBlock>
+
+        <PasswordBox x:Name="KeyBox" Padding="8,6"/>
+        <TextBlock x:Name="StatusText" Margin="0,8,0,0" MinHeight="18" TextWrapping="Wrap"
+                   Foreground="{DynamicResource MutedForegroundBrush}"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button x:Name="RemoveButton" Content="Supprimer la clé" Padding="12,6" Margin="0,0,8,0"
+                    Click="OnRemoveClick"/>
+            <Button Content="Annuler" Padding="16,6" Margin="0,0,8,0" IsCancel="True"/>
+            <Button Content="Enregistrer" Style="{StaticResource AccentButtonStyle}" IsDefault="True"
+                    Click="OnSaveClick"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

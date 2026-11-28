@@ -21,9 +21,14 @@ public partial class OutputPanel : UserControl
     private IExecutionService? _execution;
     private int _chars;
 
-    private static readonly Regex ErrorLineRegex = new(
-        @"^(?<file>.+?)\((?<line>\d+),(?<col>\d+)\):\s*(?:error|warning)\b",
-        RegexOptions.Compiled);
+    // Formats d'erreur reconnus : C# (MSBuild), Python, PHP, Node.js
+    private static readonly Regex[] ErrorPatterns =
+    {
+        new(@"^(?<file>.+?)\((?<line>\d+),(?<col>\d+)\):\s*(?:error|warning)\b", RegexOptions.Compiled),
+        new(@"File ""(?<file>.+?)"", line (?<line>\d+)", RegexOptions.Compiled),
+        new(@"\bin (?<file>[A-Za-z]:[^:\r\n]+?) on line (?<line>\d+)", RegexOptions.Compiled),
+        new(@"(?<file>[A-Za-z]:\\[^:()\r\n]+):(?<line>\d+)(?::(?<col>\d+))?", RegexOptions.Compiled)
+    };
     private string? _projectDir;
 
     /// <summary>Double-clic sur une erreur : chemin complet, ligne, colonne.</summary>
@@ -95,15 +100,21 @@ public partial class OutputPanel : UserControl
 
         string line = all[start..end].Trim();
 
-        var m = ErrorLineRegex.Match(line);
-        
-        if (!m.Success) return;
+        // On essaie chaque format jusqu'à en trouver un qui correspond
+        Match? m = null;
+        foreach (var pattern in ErrorPatterns)
+        {
+            var candidate = pattern.Match(line);
+            if (candidate.Success) { m = candidate; break; }
+        }
+        if (m is null) return;
 
         string? path = ResolveFile(m.Groups["file"].Value);
-        
         if (path == null) return;
 
-        ErrorActivated?.Invoke(path, int.Parse(m.Groups["line"].Value), int.Parse(m.Groups["col"].Value));
+        int column = m.Groups["col"].Success ? int.Parse(m.Groups["col"].Value) : 1;
+        ErrorActivated?.Invoke(path, int.Parse(m.Groups["line"].Value), column);
+        e.Handled = true;
         e.Handled = true;
     }
 

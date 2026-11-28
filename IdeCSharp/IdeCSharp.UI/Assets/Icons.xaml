@@ -31,4 +31,8 @@
 
     <!-- Nouveau fichier : feuille avec coin plié et un « + » -->
     <Geometry x:Key="IconNewFile">M6,3 L14,3 L19,8 L19,21 L6,21 Z M14,3 L14,8 L19,8 M12.5,12 L12.5,17 M10,14.5 L15,14.5</Geometry>
+    <!-- Compte : tête et épaules -->
+    <Geometry x:Key="IconAccount">M12,3.5 A4,4 0 1 1 12,11.5 A4,4 0 1 1 12,3.5 Z M4.5,21 A7.5,7.5 0 0 1 19.5,21</Geometry>
+    <!-- Cloner : flèche vers un plateau -->
+    <Geometry x:Key="IconClone">M12,3 L12,15 M7,10.5 L12,15.5 L17,10.5 M4,20 L20,20</Geometry>
 </ResourceDictionary>

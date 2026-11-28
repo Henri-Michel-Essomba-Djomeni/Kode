@@ -48,6 +48,14 @@ namespace IdeCSharp.UI
             Scroller.ScrollToEnd();
         }
 
+        /// <summary>Levé quand l'utilisateur clique sur « Clé API ».</summary>
+        public event Action? KeyRequested;
+
+        private void OnKeyClick(object sender, RoutedEventArgs e) => KeyRequested?.Invoke();
+
+        /// <summary>Met à jour « prêt / non connecté » (après un changement de clé).</summary>
+        public void RefreshState() => UpdateState();
+
         private void OnClearClick(object sender, RoutedEventArgs e) => _messages.Clear();
 
         private async void OnSendClick(object sender, RoutedEventArgs e) => await SendAsync();
@@ -74,7 +82,7 @@ namespace IdeCSharp.UI
             if (service is null || !service.IsConfigured)
             {
                 _messages.Add(new ChatMessage(false,
-                    "L'assistant n'est pas encore connecté : il faudra brancher un service d'IA et sa clé d'accès."));
+                    "L'assistant n'est pas connecté : clique sur « Clé API » en haut du panneau pour ajouter ta clé Gemini gratuite."));
                 return;
             }
 
