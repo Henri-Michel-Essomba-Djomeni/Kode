@@ -62,7 +62,7 @@ public partial class WelcomeView : UserControl
             var folderText = new TextBlock
             {
                 Text = Path.GetDirectoryName(clean) ?? string.Empty,
-                FontSize = 11,
+                FontSize= 12,
                 Margin = new Thickness(10, 0, 0, 0),
                 MaxWidth = 240,
                 TextTrimming = TextTrimming.CharacterEllipsis,

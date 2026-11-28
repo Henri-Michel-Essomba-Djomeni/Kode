@@ -58,6 +58,7 @@ namespace IdeCSharp.UI
             SourceInitialized += (_, _) => WindowStyler.SetDarkTitleBar(this, ThemeManager.IsDark);
             ThemeManager.ThemeChanged += dark => WindowStyler.SetDarkTitleBar(this, dark);
             UpdateAccountButton();
+            InitAssistant();
         }
 
         // ------------------------------------------------------------------

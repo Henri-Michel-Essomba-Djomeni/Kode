@@ -6,6 +6,8 @@
         <DockPanel DockPanel.Dock="Top" Margin="14,12,10,8">
             <Button DockPanel.Dock="Right" Content="Effacer" Padding="8,2" FontSize="11"
                     Click="OnClearClick"/>
+            <Button DockPanel.Dock="Right" Content="Clé API" Padding="8,2" FontSize="11" Margin="0,0,6,0"
+                    Click="OnKeyClick"/>
             <TextBlock Text="ASSISTANT" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"
                        Foreground="{DynamicResource MutedForegroundBrush}"/>
             <TextBlock x:Name="StateText" FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center"
